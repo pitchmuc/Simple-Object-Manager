@@ -24,11 +24,11 @@ You can also pass directly the tenant reference in the schema directly during in
 Such as:
 
 ```JS
-xom1 = Xom()
-xom2 = Xom(tenant="_tenant") /*will generate {"_tenant" : {}} from the start*/
+xom1 = new Xom()
+xom2 = new Xom(tenant="_tenant") /*will generate {"_tenant" : {}} from the start*/
 
-xom3 = Xom(xom1) /* Using the xom1 as template - xom1 could contains some attributes*/
-xom4 = Xom([xom1,xom2]) /* merging different object together - following the order of the arguments */
+xom3 = new Xom(xom1) /* Using the xom1 as template - xom1 could contains some attributes*/
+xom4 = new Xom([xom1,xom2]) /* merging different object together - following the order of the arguments */
 ```
 
 ### Launch extension compatible
