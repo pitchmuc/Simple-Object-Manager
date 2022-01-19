@@ -156,3 +156,14 @@ Such as:
         }
     */
 ```
+
+## Questions
+
+**Why Not using an EDDL ?**
+You could use the EDDL structure (it has been inspired from it), definitely, that would be the best course of action but many websites do not have the capacity to migrate from their legacy CEDL.\
+Also you EDDL may not be containing "XDM compatible" data.
+Finally, the use-case I am trying to cover doesn't require to have the event management that normal EDDL structure handle to.(listener and pushing event)
+
+**Who is going to maintain it?**
+The community ? The code would be open-source (like everything I do) so if you are not happy about it, you can fork it, you can generate your own version of the library.
+Also, the idea is to have a minimum amount of methods available that are quite basic so the support should be minimal after the first edge cases are solved.
