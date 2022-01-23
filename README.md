@@ -2,168 +2,40 @@
 
 The XDM Object Manager (`Xom`) is a project that tends to create a object that contains methods associated to it and that helps the management of the XDM representation of the data.\
 
-AEP Web SDK expect to pass an object that has the reference to different fields specified in the AEP Schema creation.\
-However, there is no way to handle the object directly in the AEP Web SDK, as it is for the `s` object for the Adobe Analytics library.\
-This project aims at creating such intermediary step that would simplify the implementation and management of object reference.
-
 This object can be available on a global scale (window) and can be instanciated multiple time, so you can handle different instance of the `Xom`.
 
-## Specifications
+The goal of this library is to facilitate the object management for client side library, especially the AEP Web SDK, where generating a clean object is crucial. 
 
-The following section will describe the specification that the `Xom` object should have for its usage.\
-It will also describe the different methods that are thought to be useful for the usage of that.
+You can find more information on that project and the different methods supported in the following sections.
 
-### Instanciation
+## XDM Object Manager origin
 
-The library is referencing a class that can be instanciated multiple time per page.\
-Each of the instance will possess their own attributes, and the instances can be merged.\
-Ideally an existing XDM Object Manager object can be used as reference of the instanciation.
+This documentation will provide you the philosophy and use-cases cases supported by the XDM Object Manager.\
 
-You can also pass directly the tenant reference in the schema directly during instanciation.
+[XDM Object Manager Origin](XDM_Object_Manager_Origin.md)
 
-Such as:
+## Methods
 
-```JS
-xom1 = new Xom()
-xom2 = new Xom(tenant="_tenant") /*will generate {"_tenant" : {}} from the start*/
+This documentation will provide you with documentation on how to instantiate the `Xom` class and the different methods available from the `Xom` instance.
 
-xom3 = new Xom(xom1) /* Using the xom1 as template - xom1 could contains some attributes*/
-xom4 = new Xom([xom1,xom2]) /* merging different object together - following the order of the arguments */
-```
+[XDM Object Manager Methods](XDM_Object_Manager_Methods.md)
 
-### Launch extension compatible
+## FAQ
 
-The library should be easily loadable in a Launch extension. It means being written in ES5. :(
+Some legitimate questions are rising from this project.\
+I tried to answer them in this documentation.
 
-Ideally, the instanciation of a XDM Object Manager can be done via Data Element setup, such as: 
-```JS
-xom1 = _satellite.getVar('DataElementXOMReference')
-```
+[FAQ XDM Object Manager](FAQ.md)
 
-### Methods
+## Libraries
 
-Here are reference of the different possible methods that can be considered usefull for the management of an XDM reference.
+Here are the link to the different libraries.
 
-#### Assigning value
+### XDM Object Manager - JS
 
-You can assign value to the xom object by using the `assign` method.\
-The method takes 2 arguments:
-* path of the field
-* value of the field
+This link will go to the JS version of the library.
 
-such as:
-```JS
-    xom.assign('_tenant.firstname','julien')
-    /*
-    This will result in adding this element:
-    {
-        "_tenant":{
-            "firstname" : "julien"
-        }
-    }
-    
-    */
-```
+### XDM Object Manager - Launch Extension [tbd]
 
-You can also directly pass object in the value such as:
-```JS
-    xom.assign('_tenant',{'firstname':'julien'})
-    /*
-    This will result in adding this element:
-    {
-        "_tenant":{
-            "firstname" : "julien"
-        }
-    }
-    
-    */
-```
+## Releases [tbd]
 
-or array:
-```JS
-    xom.assign('_tenant',[{'firstname':'julien'},{'firstname':'jennifer'}])
-    /*
-    This will result in adding this element:
-    {
-        "_tenant":[
-            {
-            "firstname" : "julien"
-            },
-            {
-            "firstname" : "julien"
-            }
-        ]
-    }
-    
-    */
-```
-
-#### Accessing data
-
-Data can be access directly by the call of the `xom` instance or by the `get` method.\
-Such as:
-```JS
-    xom()
-    /*
-    This will returned
-    {
-        "_tenant":[
-            {
-            "firstname" : "julien"
-            }
-        ]
-    } 
-    */
-   //*********       OR           *****************// 
-   xom.get()
-    /*
-    This will returned
-    {
-        "_tenant":[
-            {
-            "firstname" : "julien"
-            }
-        ]
-    } 
-    */
-```
-
-It would be possible to access a specific field of the object via the `get` method with dot notation.
-
-```JS
-    xom.get('_tenant.firstname')
-    /*
-    This will return 'julien'
-    */
-```
-
-#### Handling path error
-
-The `xom` instance should be robust enough so it doesn't break when a wrong path is used.\
-If a wrong path is used, the `get` method will return undefined\
-If a wrong path is used, the `assign` method will create the new path for the element proposed.
-
-### Removing fields
-
-The same way that for assigning value, you can delete a specific reference by specifying the path.\
-Such as:
-```JS
-    xom.remove('_tenant.firstname')
-    /*
-    This will return the field from the object, so new XDM object is:
-        {
-            "_tenant" : {}
-        }
-    */
-```
-
-## Questions
-
-**Why Not using an EDDL ?**\
-You could use the EDDL structure (it has been inspired from it), definitely, that would be the best course of action but many websites do not have the capacity to migrate from their legacy CEDDL.\
-Also you EDDL may not be containing "XDM compatible" data.\
-Finally, the use-case I am trying to cover doesn't require to have the event management that normal EDDL structure handle to.(listener and pushing event)
-
-**Who is going to maintain it?**\
-The community ? The code would be open-source (like everything I do) so if you are not happy about it, you can fork it, you can generate your own version of the library.
-Also, the idea is to have a minimum amount of methods available that are quite basic so the support should be minimal after the first edge cases are solved.
