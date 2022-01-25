@@ -1,8 +1,6 @@
 'use strict';
-
 function deepFreeze(o) {
     Object.freeze(o);
-
     Object.getOwnPropertyNames(o).forEach(function(prop) {
         if (o.hasOwnProperty(prop) &&
             o[prop] !== null &&
@@ -11,21 +9,18 @@ function deepFreeze(o) {
             deepFreeze(o[prop]);
         }
     });
-
     return o;
 };
 
 class Xom{
-
     
-    /* 
-    Instanciation of the class.
-    Arguments:
-        args: object to build template of the data
-    
-    
-    */
-    constructor(args,kwargs,tenant=undefined,defaultValue=undefined) {
+    /**
+     * 
+     * @param {object} object 
+     * @param {string} tenant 
+     * @param {string} defaultValue 
+     */
+    constructor(object,tenant=undefined,defaultValue=undefined) {
         this.data = {}
         this.defaultValue = defaultValue
         if(tenant != undefined){
@@ -33,11 +28,11 @@ class Xom{
                 tenant : {}
             }
         }
-        else if (typeof(args) == 'object' && (args instanceof Xom) == false){
-            this.data = args
+        else if (typeof(object) == 'object' && (object instanceof Xom) == false){
+            this.data = Object.assign({},object)
         }
-        else if (typeof(args) == 'object' && (args instanceof Xom) == true){
-            this.data = args.data
+        else if (typeof(object) == 'object' && (object instanceof Xom) == true){
+            this.data = Object.assign({},object.data)
         }
     }
 
