@@ -76,56 +76,68 @@ class Xom{
      * @param {object|string} value
      */
     assign(path, value){
-        var pathSplit = path.split('.');
-        /* define path and create it if required */
-        var xom = this.data
-        for (var i=0;i<pathSplit.length && xom != undefined;i++){ // Traverse a create if necessary
-            if (typeof(pathSplit[i]) == 'string' && isNaN(pathSplit[i]) == true) { //If value is a string
-                console.log('string')
-                if(Object(xom).hasOwnProperty(pathSplit[i])){// if path present
-                    if (i == pathSplit.length -1){
-                        xom[pathSplit[i]] = value
-                    }
-                    else{
-                        xom = xom[pathSplit[i]]
-                    }
-                }
-                else{// if path not present
-                    if (i == pathSplit.length -1){ /** if last element */
-                        xom[pathSplit[i]] = value
-                    }
-                    else{
-                        if(isNaN(pathSplit[i+1])){ /* next element is part of object */
-                            xom[pathSplit[i]] = {} /** create the path */
+        if(typeof path != "undefined" && path != "" && typeof path == "string"){
+            var pathSplit = path.split('.');
+            /* define path and create it if required */
+            var xom = this.data
+            for (var i=0;i<pathSplit.length && xom != undefined;i++){ // Traverse a create if necessary
+                if (typeof(pathSplit[i]) == 'string' && isNaN(pathSplit[i]) == true) { //If value is a string
+                    console.log('string')
+                    if(Object(xom).hasOwnProperty(pathSplit[i])){// if path present
+                        if (i == pathSplit.length -1){ // if it is the last element
+                            if(Array.isArray(xom[pathSplit[i]])){ // if it is an array
+                                xom[pathSplit[i]].push(value)
+                            }
+                            else{
+                                xom[pathSplit[i]] = value
+                            }
+                            
                         }
-                        else{/* next element is part of an array */
-                            xom[pathSplit[i]] = [] /** create the path */
+                        else{
+                            xom = xom[pathSplit[i]]
                         }
-                        xom = xom[pathSplit[i]] /** assign the new path*/
                     }
+                    else{// if path not present
+                        if (i == pathSplit.length -1){ /** if last element */
+                            xom[pathSplit[i]] = value
+                        }
+                        else{
+                            if(isNaN(pathSplit[i+1])){ /* next element is part of object */
+                                xom[pathSplit[i]] = {} /** create the path */
+                            }
+                            else{/* next element is part of an array */
+                                xom[pathSplit[i]] = [] /** create the path */
+                            }
+                            xom = xom[pathSplit[i]] /** assign the new path*/
+                        }
+                    }
+                } 
+                else if (typeof(pathSplit[i]) == 'string' && isNaN(pathSplit[i]) == false) { //If value is a number
+                    console.log('number')
+                    if(Array.isArray(xom) && Math.abs(pathSplit[i]) < xom.length){ /* Array contain enough elements */
+                        if (i == pathSplit.length -1){
+                            xom[pathSplit[i]].push(value)
+                        }
+                        else{
+                            xom = xom[pathSplit[i]]
+                        }
+                    }
+                    else if(Array.isArray(xom) && i > xom.length){ /* Array do not contain enough elements - creating one additional */
+                        if (i == pathSplit.length -1){
+                            xom.push(value);
+                        }
+                        else{
+                            xom.push({});
+                            xom = xom[xom.length-1];
+                        }
+                    }
+                    
                 }
-            } 
-            else if (typeof(pathSplit[i]) == 'string' && isNaN(pathSplit[i]) == false) { //If value is a number
-                console.log('number')
-                if(Array.isArray(xom) && Math.abs(pathSplit[i]) < xom.length){ /* Array contain enough elements */
-                    if (i == pathSplit.length -1){
-                        xom[pathSplit[i]].push(value)
-                    }
-                    else{
-                        xom = xom[pathSplit[i]]
-                    }
-                }
-                else if(Array.isArray(xom) && i > xom.length){ /* Array do not contain enough elements - creating one additional */
-                    if (i == pathSplit.length -1){
-                        xom.push(value);
-                    }
-                    else{
-                        xom.push({});
-                        xom = xom[xom.length-1];
-                    }
-                }
-                
             }
+        }
+        else if (typeof path == "object" ){
+            this.data = Object.assign(this.data,path)
+            var xom = this.data
         }
         return xom
     }
