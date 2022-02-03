@@ -1,19 +1,5 @@
 'use strict';
-function deepFreeze(o) {
-    Object.freeze(o);
-    Object.getOwnPropertyNames(o).forEach(function(prop) {
-        if (o.hasOwnProperty(prop) &&
-            o[prop] !== null &&
-            (typeof o[prop] === "object" || typeof o[prop] === "function") &&
-            !Object.isFrozen(o[prop])) {
-            deepFreeze(o[prop]);
-        }
-    });
-    return o;
-};
-
 class Xom{
-    
     /**
      * 
      * @param {object} object 
@@ -39,7 +25,7 @@ class Xom{
     /** Getter of the Xom class instanciation.
      *  
      * @param {string} path can be empty to return the whole object or a specific path such as "tenant.firstname"
-     * @returns {object|str} 
+     * @returns {object|string} 
      */
     get(path){
         if(typeof(path) == "undefined" || path == ""){
@@ -56,7 +42,7 @@ class Xom{
                     else{
                         value = value[parseInt(pathSplit[i])];
                     }
-                    console.log(value)
+                    //console.log(value)
                 } 
                 else if(Array.isArray(value) && Math.abs(parseInt(pathSplit[i]))>value.length){ // trying to access above # of elements
                     value = this.defaultValue || undefined
@@ -82,10 +68,11 @@ class Xom{
             var xom = this.data
             for (var i=0;i<pathSplit.length && xom != undefined;i++){ // Traverse a create if necessary
                 if (typeof(pathSplit[i]) == 'string' && isNaN(pathSplit[i]) == true) { //If value is a string
-                    console.log('string')
+                    //console.log('string')
                     if(Object(xom).hasOwnProperty(pathSplit[i])){// if path present
                         if (i == pathSplit.length -1){ // if it is the last element
                             if(Array.isArray(xom[pathSplit[i]])){ // if it is an array
+                                //console.log('array as last element')
                                 xom[pathSplit[i]].push(value)
                             }
                             else{
@@ -94,12 +81,21 @@ class Xom{
                             
                         }
                         else{
+                            if(typeof xom[pathSplit[i]] == 'string'){
+                                xom[pathSplit[i]] = {}
+                            }
                             xom = xom[pathSplit[i]]
                         }
                     }
                     else{// if path not present
+                        console.log('new path')
                         if (i == pathSplit.length -1){ /** if last element */
-                            xom[pathSplit[i]] = value
+                            if(typeof xom !='object'){ /** if previous element is not an object */
+                                return undefined
+                            }
+                            else{
+                                xom[pathSplit[i]] = value
+                            }
                         }
                         else{
                             if(isNaN(pathSplit[i+1])){ /* next element is part of object */
@@ -113,16 +109,18 @@ class Xom{
                     }
                 } 
                 else if (typeof(pathSplit[i]) == 'string' && isNaN(pathSplit[i]) == false) { //If value is a number
-                    console.log('number')
+                    //console.log('number')
                     if(Array.isArray(xom) && Math.abs(pathSplit[i]) < xom.length){ /* Array contain enough elements */
-                        if (i == pathSplit.length -1){
-                            xom[pathSplit[i]].push(value)
+                        console.log('existing element');
+                        if (i == pathSplit.length -1){ /** last element */
+                            xom[pathSplit[i]] = value
                         }
                         else{
                             xom = xom[pathSplit[i]]
                         }
                     }
-                    else if(Array.isArray(xom) && i > xom.length){ /* Array do not contain enough elements - creating one additional */
+                    else if(Array.isArray(xom) && pathSplit[i] >= xom.length){ /* Array do not contain enough elements - creating one additional */
+                        console.log('new element');
                         if (i == pathSplit.length -1){
                             xom.push(value);
                         }
@@ -137,9 +135,8 @@ class Xom{
         }
         else if (typeof path == "object" ){
             this.data = Object.assign(this.data,path)
-            var xom = this.data
         }
-        return xom
+        return this.data
     }
 
     /** the merge method will take a path, and an existing object 
@@ -204,15 +201,18 @@ class Xom{
             if (typeof(pathSplit[i]) == 'string' && isNaN(pathSplit[i]) == true) { //If value is a string
                 console.log('string');
                 if(Object(xom).hasOwnProperty(pathSplit[i])){// if path present
-                    if (i == pathSplit.length -1){
-                        xom[pathSplit[i]] = ""
+                    if (i == pathSplit.length -1){/** last element */
+                        if(typeof xom[pathSplit[i]] == "object"){
+                            delete xom[pathSplit[i]]
+                        }else{
+                            xom[pathSplit[i]] = undefined
+                        }
                     }
                     else{
                         xom = xom[pathSplit[i]]
                     }
                 }
                 else{// if path not present
-                    xom = ""
                     return this.data
                 }
             } 
