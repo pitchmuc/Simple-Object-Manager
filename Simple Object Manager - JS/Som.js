@@ -1,23 +1,25 @@
 'use strict';
-class Xom{
+class Som{
     /**
      * 
      * @param {object} object 
-     * @param {string} tenant 
      * @param {string} defaultValue 
      */
-    constructor(object,tenant=undefined,defaultValue=undefined) {
+    constructor(object,defaultValue=undefined) {
         this.data = {}
         this.defaultValue = defaultValue
-        if(tenant != undefined){
-            this.data = {
-                tenant : {}
+        if (typeof(object) == 'object' && (object instanceof Som) == false){
+            if(Array.isArray(object) && object.length > 0){
+                object.forEach(function(element){
+                    this.data = Object.assign(this.data,element)
+                })
+
+            }
+            else{
+                this.data = Object.assign({},object)
             }
         }
-        else if (typeof(object) == 'object' && (object instanceof Xom) == false){
-            this.data = Object.assign({},object)
-        }
-        else if (typeof(object) == 'object' && (object instanceof Xom) == true){
+        else if (typeof(object) == 'object' && (object instanceof Som) == true){
             this.data = Object.assign({},object.data)
         }
     }
@@ -62,6 +64,9 @@ class Xom{
      * @param {object|string} value
      */
     assign(path, value){
+        if (typeof value == "undefined"){
+            value = {}
+        }
         if(typeof path != "undefined" && path != "" && typeof path == "string"){
             var pathSplit = path.split('.');
             /* define path and create it if required */

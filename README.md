@@ -1,41 +1,42 @@
-# XDM Object Manager
+# Simple Object Manager
 
-The XDM Object Manager (`Xom`) is a project that tends to create a object that contains methods associated to it and that helps the management of the XDM representation of the data.\
+The Simple Object Manager (`Som`) is a project that tends to create a object containing methods helping you on manipulating data object representation.\
 
-This object can be available on a global scale (window) and can be instanciated multiple time, so you can handle different instance of the `Xom`.
+This object can be available on a global scale (window) and can be instanciated multiple times, so you can handle different instances of the `Som`.
 
-The goal of this library is to facilitate the object management for client side library, especially the AEP Web SDK, where generating a clean object is crucial. 
+The goal of this library is to facilitate the object management for less advanced users that have to deal with complex data representation (Objects, Arrays interlocked).\
+Working with objects can be cumbersome and bring issues on your data collection implementation. These issues leads to either workarounds or just failing the data collection altogether.
 
 You can find more information on that project and the different methods supported in the following sections.
 
-## XDM Object Manager origin
+## Simple Object Manager origin
 
-This documentation will provide you the philosophy and use-cases cases supported by the XDM Object Manager.\
+This documentation will provide you the philosophy and use-cases cases supported by the Simple Object Manager.\
 
-[XDM Object Manager Origin](XDM_Object_Manager_Origin.md)
+[Simple Object Manager Origin](Simple_Object_Manager_Origin.md)
 
 ## Methods
 
-This documentation will provide you with documentation on how to instantiate the `Xom` class and the different methods available from the `Xom` instance.
+This documentation will provide you with documentation on how to instantiate the `Som` class and the different methods available from the `Som` instance.
 
-[XDM Object Manager Methods](XDM_Object_Manager_Methods.md)
+[Simple Object Manager Methods](Simple_Object_Manager_Methods.md)
 
 ## FAQ
 
 Some legitimate questions are rising from this project.\
 I tried to answer them in this documentation.
 
-[FAQ XDM Object Manager](FAQ.md)
+[FAQ Simple Object Manager](FAQ.md)
 
 ## Libraries
 
 Here are the link to the different libraries.
 
-### XDM Object Manager - JS
+### Simple Object Manager - JS
 
-This link will go to the JS version of the library.
+This [link](./Simple_Object_Manager_-_JS/) will go to the JS version of the library.
 
-### XDM Object Manager - Launch Extension [tbd]
+### Simple Object Manager - Launch Extension [tbd]
 
 ## Releases [tbd]
-
+Once a stable version is realized, any further improvement or modification will be documented in this section.
