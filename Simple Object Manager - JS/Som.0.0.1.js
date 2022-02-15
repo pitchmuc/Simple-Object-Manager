@@ -6,8 +6,9 @@ class Som{
      * @param {string} defaultValue 
      */
     constructor(object,defaultValue=undefined) {
-        this.data = {}
-        this.defaultValue = defaultValue
+        this.data = {};
+        this.version = '0.0.1';
+        this.defaultValue = defaultValue;
         if (typeof(object) == 'object' && (object instanceof Som) == false){
             if(Array.isArray(object) && object.length > 0){
                 object.forEach(function(element){
@@ -44,7 +45,6 @@ class Som{
                     else{
                         value = value[parseInt(pathSplit[i])];
                     }
-                    //console.log(value)
                 } 
                 else if(Array.isArray(value) && Math.abs(parseInt(pathSplit[i]))>value.length){ // trying to access above # of elements
                     value = this.defaultValue || undefined
@@ -73,11 +73,9 @@ class Som{
             var xom = this.data
             for (var i=0;i<pathSplit.length && xom != undefined;i++){ // Traverse a create if necessary
                 if (typeof(pathSplit[i]) == 'string' && isNaN(pathSplit[i]) == true) { //If value is a string
-                    //console.log('string')
                     if(Object(xom).hasOwnProperty(pathSplit[i])){// if path present
                         if (i == pathSplit.length -1){ // if it is the last element
                             if(Array.isArray(xom[pathSplit[i]])){ // if it is an array
-                                //console.log('array as last element')
                                 xom[pathSplit[i]].push(value)
                             }
                             else{
@@ -93,7 +91,6 @@ class Som{
                         }
                     }
                     else{// if path not present
-                        console.log('new path')
                         if (i == pathSplit.length -1){ /** if last element */
                             if(typeof xom !='object'){ /** if previous element is not an object */
                                 return undefined
@@ -114,9 +111,7 @@ class Som{
                     }
                 } 
                 else if (typeof(pathSplit[i]) == 'string' && isNaN(pathSplit[i]) == false) { //If value is a number
-                    //console.log('number')
                     if(Array.isArray(xom) && Math.abs(pathSplit[i]) < xom.length){ /* Array contain enough elements */
-                        console.log('existing element');
                         if (i == pathSplit.length -1){ /** last element */
                             xom[pathSplit[i]] = value
                         }
@@ -125,7 +120,6 @@ class Som{
                         }
                     }
                     else if(Array.isArray(xom) && pathSplit[i] >= xom.length){ /* Array do not contain enough elements - creating one additional */
-                        console.log('new element');
                         if (i == pathSplit.length -1){
                             xom.push(value);
                         }
@@ -164,7 +158,6 @@ class Som{
                     else{
                         value = value[parseInt(pathSplit[i])];
                     }
-                    console.log(value)
                 } 
                 else if(Array.isArray(value) && Math.abs(parseInt(pathSplit[i]))>value.length){ // trying to access above # of elements
                     value = this.defaultValue || undefined
@@ -191,10 +184,15 @@ class Som{
 
     /** Remove the value from the specific path.
      *  If path is not provided, clear the data.
+     *  If you provide true to the "key" parameter, it will delete the key itself.
      * 
      * @param {string} path
+     * @param {boolean} key
      */
-    remove(path){
+    remove(path,key){
+        if (typeof key == "undefined"){
+            key = false;
+        }
         if(path == "" || typeof path == "undefined"){
             this.clear()
         }
@@ -204,13 +202,18 @@ class Som{
         var xom = this.data
         for (var i=0;i<pathSplit.length && xom != undefined;i++){ // Traverse a create if necessary
             if (typeof(pathSplit[i]) == 'string' && isNaN(pathSplit[i]) == true) { //If value is a string
-                console.log('string');
                 if(Object(xom).hasOwnProperty(pathSplit[i])){// if path present
                     if (i == pathSplit.length -1){/** last element */
                         if(typeof xom[pathSplit[i]] == "object"){
                             delete xom[pathSplit[i]]
                         }else{
-                            xom[pathSplit[i]] = undefined
+                            if(key){
+                                delete xom[pathSplit[i]]
+                            }
+                            else{
+                                xom[pathSplit[i]] = undefined
+                            }
+                            
                         }
                     }
                     else{
@@ -222,7 +225,6 @@ class Som{
                 }
             } 
             else if (typeof(pathSplit[i]) == 'string' && isNaN(pathSplit[i]) == false) { //If value is a number
-                console.log('number');
                 if(Array.isArray(xom) && Math.abs(pathSplit[i]) < xom.length){ /* Array contain enough elements */
                     if (i == pathSplit.length -1){ /* if the element is the last */
                         xom.splice(pathSplit[i], 1);
@@ -238,31 +240,11 @@ class Som{
                 
             }
         }
-
         }
-
     }
 
     clear(){
         this.data = {
         }
     }
-
-    /** clear the object but set a template following the object passed.
-     * 
-     * @param {object} object if you wish to pass an object to be used as template for start-over.
-     */
-    partialClear(object){
-        this.data = {}
-        if(typeof object == 'str'){
-            this.data = {
-                object:{}
-            }
-        }
-        else if(typeof object == 'object'){
-            this.data = object
-        }
-
-    }
-
 }

@@ -34,7 +34,7 @@ Here are the link to the different libraries.
 
 ### Simple Object Manager - JS
 
-This [link](./Simple_Object_Manager_-_JS/) will go to the JS version of the library.
+This [link](https://github.com/pitchmuc/Simple-Object-Manager/tree/main/Simple%20Object%20Manager%20-%20JS) will go to the JS version of the library.
 
 ### Simple Object Manager - Launch Extension [tbd]
 

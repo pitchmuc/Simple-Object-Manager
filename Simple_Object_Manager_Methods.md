@@ -259,17 +259,66 @@ If a wrong path is used, the `assign` method will create the new path for the el
 ### Removing fields
 
 The same way that for assigning value, you can delete a specific reference by specifying the path.\
-Such as:
+For this object:
+```JS
+{
+    "_tenant" : {
+        "firstname" : "Julien",
+        "lastname": "Piccini"
+        }
+}
+```
+specifying the path `tenant.firstname` will remove `Julien`.
 ```JS
     som.remove('_tenant.firstname')
     /*
-    This will return the field from the object, so new XDM object is:
+    This will remove the value from the object, so new XDM object is:
         {
-            "_tenant" : {}
+            "_tenant" : {
+                "firtname" : undefined,
+                "lastname": "Piccini"
+                }
         }
     */
 ```
 
+You can also specify to remove the key itself, by passing a boolean in the `key` parameter:
+```JS
+    som.remove('_tenant.firstname',key=true)
+    /*
+    This will remove the key from the object, so new XDM object is:
+        {
+            "_tenant" : {
+                "lastname": "Piccini"
+                }
+        }
+    */
+```
+
+
+By default, if you are giving a path that contains an object, then the whole object is removed.\
+Imagine this object:
+```JS
+{
+    "tenant" : {
+        "commerce":{
+            "cartAddition" :1,
+            "cartRemoval" :0,
+        },
+        "order":0
+    }
+}
+```
+if you are to pass `tenant.commerce`, because `commerce` is an object, it automatically delete the whole element.
+```JS
+som.remove('tenant.commerce');
+// will result in:
+{
+    "tenant" : {
+        "order":0
+    }
+}
+``` 
 
 ## Launch extension compatible
 
