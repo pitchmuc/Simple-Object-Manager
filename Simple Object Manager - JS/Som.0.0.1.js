@@ -3,12 +3,11 @@ class Som{
     /**
      * 
      * @param {object} object 
-     * @param {string} defaultValue 
+     * @param {string} df 
      */
-    constructor(object,defaultValue=undefined) {
+    constructor(object,df=undefined) {
         this.data = {};
-        this.version = '0.0.1';
-        this.defaultValue = defaultValue;
+        this.defaultv = df;
         if (typeof(object) == 'object' && (object instanceof Som) == false){
             if(Array.isArray(object) && object.length > 0){
                 object.forEach(function(element){
@@ -30,98 +29,98 @@ class Som{
      * @param {string} path can be empty to return the whole object or a specific path such as "tenant.firstname"
      * @returns {object|string} 
      */
-    get(path){
+    get(path,fallback){
         if(typeof(path) == "undefined" || path == ""){
             return this.data
         }
         else if(typeof(path) == "string"){
-            var pathSplit = path.split(".")
-            var value = this.data
-            for (var i = 0; i < pathSplit.length && value != undefined; i++) { // Traverse until found or undefined
-                if (Array.isArray(value) && Math.abs(parseInt(pathSplit[i]))<=value.length) { //If parent is array and path is in the index
-                    if(parseInt(pathSplit[i])<0){ /** Negative number */
-                        value = value[value.length - Math.abs(parseInt(pathSplit[i]))];
+            var pS = path.split(".")
+            var v = this.data
+            for (var i = 0; i < pS.length && v != undefined; i++) { // Traverse until found or undefined
+                if (Array.isArray(v) && Math.abs(parseInt(pS[i]))<=v.length) { //If parent is array and path is in the index
+                    if(parseInt(pS[i])<0){ /** Negative number */
+                        v = v[v.length - Math.abs(parseInt(pS[i]))];
                     }
                     else{
-                        value = value[parseInt(pathSplit[i])];
+                        v = v[parseInt(pS[i])];
                     }
                 } 
-                else if(Array.isArray(value) && Math.abs(parseInt(pathSplit[i]))>value.length){ // trying to access above # of elements
-                    value = this.defaultValue || undefined
+                else if(Array.isArray(v) && Math.abs(parseInt(pS[i]))>v.length){ // trying to access above # of elements
+                    v = fallback || this.defaultv || undefined
                 }
                 else {
-                    value = value[pathSplit[i]];
+                    v = v[pS[i]];
                 }
             }
-            return value || this.defaultValue || undefined
+            return v || fallback || this.defaultv || undefined
         }
     }
 
     /**
-     * Assign a value to a path, creating a path if necessary
+     * Assign a v to a path, creating a path if necessary
      * 
      * @param {string} path 
-     * @param {object|string} value
+     * @param {object|string} v
      */
-    assign(path, value){
-        if (typeof value == "undefined"){
-            value = {}
+    assign(path, v){
+        if (typeof v == "undefined"){
+            v = {}
         }
         if(typeof path != "undefined" && path != "" && typeof path == "string"){
-            var pathSplit = path.split('.');
+            var pS = path.split('.');
             /* define path and create it if required */
             var xom = this.data
-            for (var i=0;i<pathSplit.length && xom != undefined;i++){ // Traverse a create if necessary
-                if (typeof(pathSplit[i]) == 'string' && isNaN(pathSplit[i]) == true) { //If value is a string
-                    if(Object(xom).hasOwnProperty(pathSplit[i])){// if path present
-                        if (i == pathSplit.length -1){ // if it is the last element
-                            if(Array.isArray(xom[pathSplit[i]])){ // if it is an array
-                                xom[pathSplit[i]].push(value)
+            for (var i=0;i<pS.length && xom != undefined;i++){ // Traverse a create if necessary
+                if (typeof(pS[i]) == 'string' && isNaN(pS[i]) == true) { //If v is a string
+                    if(Object(xom).hasOwnProperty(pS[i])){// if path present
+                        if (i == pS.length -1){ // if it is the last element
+                            if(Array.isArray(xom[pS[i]])){ // if it is an array
+                                xom[pS[i]].push(v)
                             }
                             else{
-                                xom[pathSplit[i]] = value
+                                xom[pS[i]] = v
                             }
                             
                         }
                         else{
-                            if(typeof xom[pathSplit[i]] == 'string'){
-                                xom[pathSplit[i]] = {}
+                            if(typeof xom[pS[i]] == 'string'){
+                                xom[pS[i]] = {}
                             }
-                            xom = xom[pathSplit[i]]
+                            xom = xom[pS[i]]
                         }
                     }
                     else{// if path not present
-                        if (i == pathSplit.length -1){ /** if last element */
+                        if (i == pS.length -1){ /** if last element */
                             if(typeof xom !='object'){ /** if previous element is not an object */
                                 return undefined
                             }
                             else{
-                                xom[pathSplit[i]] = value
+                                xom[pS[i]] = v
                             }
                         }
                         else{
-                            if(isNaN(pathSplit[i+1])){ /* next element is part of object */
-                                xom[pathSplit[i]] = {} /** create the path */
+                            if(isNaN(pS[i+1])){ /* next element is part of object */
+                                xom[pS[i]] = {} /** create the path */
                             }
                             else{/* next element is part of an array */
-                                xom[pathSplit[i]] = [] /** create the path */
+                                xom[pS[i]] = [] /** create the path */
                             }
-                            xom = xom[pathSplit[i]] /** assign the new path*/
+                            xom = xom[pS[i]] /** assign the new path*/
                         }
                     }
                 } 
-                else if (typeof(pathSplit[i]) == 'string' && isNaN(pathSplit[i]) == false) { //If value is a number
-                    if(Array.isArray(xom) && Math.abs(pathSplit[i]) < xom.length){ /* Array contain enough elements */
-                        if (i == pathSplit.length -1){ /** last element */
-                            xom[pathSplit[i]] = value
+                else if (typeof(pS[i]) == 'string' && isNaN(pS[i]) == false) { //If v is a number
+                    if(Array.isArray(xom) && Math.abs(pS[i]) < xom.length){ /* Array contain enough elements */
+                        if (i == pS.length -1){ /** last element */
+                            xom[pS[i]] = v
                         }
                         else{
-                            xom = xom[pathSplit[i]]
+                            xom = xom[pS[i]]
                         }
                     }
-                    else if(Array.isArray(xom) && pathSplit[i] >= xom.length){ /* Array do not contain enough elements - creating one additional */
-                        if (i == pathSplit.length -1){
-                            xom.push(value);
+                    else if(Array.isArray(xom) && pS[i] >= xom.length){ /* Array do not contain enough elements - creating one additional */
+                        if (i == pS.length -1){
+                            xom.push(v);
                         }
                         else{
                             xom.push({});
@@ -148,33 +147,33 @@ class Som{
             return this.data
         }
         else{
-            var pathSplit = path.split(".");
-            var value = this.data;
-            for (var i = 0; i < pathSplit.length && value != undefined; i++) { // Traverse until found or undefined
-                if (Array.isArray(value) && Math.abs(parseInt(pathSplit[i]))<=value.length) { //If parent is array and path is in the index
-                    if(parseInt(pathSplit[i])<0){ /** Negative number */
-                        value = value[value.length - Math.abs(parseInt(pathSplit[i]))];
+            var pS = path.split(".");
+            var v = this.data;
+            for (var i = 0; i < pS.length && v != undefined; i++) { // Traverse until found or undefined
+                if (Array.isArray(v) && Math.abs(parseInt(pS[i]))<=v.length) { //If parent is array and path is in the index
+                    if(parseInt(pS[i])<0){ /** Negative number */
+                        v = v[v.length - Math.abs(parseInt(pS[i]))];
                     }
                     else{
-                        value = value[parseInt(pathSplit[i])];
+                        v = v[parseInt(pS[i])];
                     }
                 } 
-                else if(Array.isArray(value) && Math.abs(parseInt(pathSplit[i]))>value.length){ // trying to access above # of elements
-                    value = this.defaultValue || undefined
+                else if(Array.isArray(v) && Math.abs(parseInt(pS[i]))>v.length){ // trying to access above # of elements
+                    v = this.defaultv || undefined
                 }
                 else {
-                    value = value[pathSplit[i]];
+                    v = v[pS[i]];
                 }
             }
-            if(typeof(value) != 'undefined' || value != this.defaultValue){
-                if (Array.isArray(value) && Array.isArray(object)){
+            if(typeof(v) != 'undefined' || v != this.defaultv){
+                if (Array.isArray(v) && Array.isArray(object)){
                     object.forEach(function(element){
-                        value.push(element);
+                        v.push(element);
                     })
                 }
                 else{
-                    var newValue = Object.assign(value,object)
-                    this.data = this.assign(path,newValue)
+                    var newv = Object.assign(v,object)
+                    this.data = this.assign(path,newv)
                 }
                 return this.data
             }
@@ -182,7 +181,7 @@ class Som{
 
     }
 
-    /** Remove the value from the specific path.
+    /** Remove the v from the specific path.
      *  If path is not provided, clear the data.
      *  If you provide true to the "key" parameter, it will delete the key itself.
      * 
@@ -197,41 +196,41 @@ class Som{
             this.clear()
         }
         else{
-            var pathSplit = path.split('.');
+            var pS = path.split('.');
         /* define path and create it if required */
         var xom = this.data
-        for (var i=0;i<pathSplit.length && xom != undefined;i++){ // Traverse a create if necessary
-            if (typeof(pathSplit[i]) == 'string' && isNaN(pathSplit[i]) == true) { //If value is a string
-                if(Object(xom).hasOwnProperty(pathSplit[i])){// if path present
-                    if (i == pathSplit.length -1){/** last element */
-                        if(typeof xom[pathSplit[i]] == "object"){
-                            delete xom[pathSplit[i]]
+        for (var i=0;i<pS.length && xom != undefined;i++){ // Traverse a create if necessary
+            if (typeof(pS[i]) == 'string' && isNaN(pS[i]) == true) { //If v is a string
+                if(Object(xom).hasOwnProperty(pS[i])){// if path present
+                    if (i == pS.length -1){/** last element */
+                        if(typeof xom[pS[i]] == "object"){
+                            delete xom[pS[i]]
                         }else{
                             if(key){
-                                delete xom[pathSplit[i]]
+                                delete xom[pS[i]]
                             }
                             else{
-                                xom[pathSplit[i]] = undefined
+                                xom[pS[i]] = undefined
                             }
                             
                         }
                     }
                     else{
-                        xom = xom[pathSplit[i]]
+                        xom = xom[pS[i]]
                     }
                 }
                 else{// if path not present
                     return this.data
                 }
             } 
-            else if (typeof(pathSplit[i]) == 'string' && isNaN(pathSplit[i]) == false) { //If value is a number
-                if(Array.isArray(xom) && Math.abs(pathSplit[i]) < xom.length){ /* Array contain enough elements */
-                    if (i == pathSplit.length -1){ /* if the element is the last */
-                        xom.splice(pathSplit[i], 1);
+            else if (typeof(pS[i]) == 'string' && isNaN(pS[i]) == false) { //If v is a number
+                if(Array.isArray(xom) && Math.abs(pS[i]) < xom.length){ /* Array contain enough elements */
+                    if (i == pS.length -1){ /* if the element is the last */
+                        xom.splice(pS[i], 1);
                         return this.data
                     }
                     else{ 
-                        xom = xom[pathSplit[i]]
+                        xom = xom[pS[i]]
                     }
                 }
                 else{ /* Array do not contain enough elements */
