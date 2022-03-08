@@ -11,14 +11,13 @@ The library is referencing a class that can be instanciated multiple time per pa
 Each of the instance will possess their own attributes, and the instances can be merged.\
 Ideally an existing XDM Object Manager object can be used as reference of the instanciation.
 
-You can also pass directly the tenant reference in the schema directly during instanciation.
+You can also pass directly a JSON / JS reference in the schema directly during instanciation.
 
 Such as:
 
 ```JS
 som1 = new Som()
-som2 = new Som(tenant="_tenant") /*will generate {"_tenant" : {}} from the start*/
-
+som2 = new Som({'foo':'bar'})
 som3 = new Som(som1) /* Using the som1 as template - som1 could contains some attributes*/
 som4 = new Som([som1,som2]) /* merging different object together - following the order of the arguments */
 ```
@@ -31,10 +30,15 @@ Here are reference of the different possible methods that can be considered usef
 ### Assigning value(s)
 
 You can assign value to the som object by using the `assign` method.\
-The method takes 2 arguments:
-* path of the field
-* value of the field
+Method description:
 
+* assign
+  Assign a value to a specific path provided.
+  Arguments:
+  * path : REQUIRED : path using the dot notation to specify where to place the value.
+  * value : REQUIRED : Value to be assigned 
+
+#### Examples
 such as:
 ```JS
     som.assign('_tenant.firstname','julien')
@@ -119,7 +123,17 @@ In case, you do not assign any value, the `som` will create an empty object inst
 You can merge an existing object with the data contain in your `som` object.\
 The method uses the the `Object.assign` method from JavaScript.
 In order to do that, you can call the `merge` function that will apply the merge at the level pass through the additional `path` parameter.\
-Example:
+Method description:
+
+* merge
+  Merge an object to your existing Som object. It uses JSON.stringify method to deep copy it.
+  Arguments:
+  * object : REQUIRED : The object to merge
+  * path : OPTIONAL : path using the dot notation to specify where to place the value.
+
+
+
+#### Examples
 
 ```JS
 var myObject = {"foo":"bar","foo":"baz"}
@@ -193,6 +207,16 @@ som.merge(newMembers,'family_members')
 ### Accessing data
 
 Data can be access directly by the call of the `som` instance or by the `get` method.\
+Method description:
+
+* get
+  Return the value present at the path selected.
+  Arguments:
+  * path : OPTIONAL : path with dot notation such as `tenant.array.0.firstname`
+  * fallback : OPTIONAL : a value to return in case the selected path returns `undefined`
+
+#### Examples
+
 Such as:
 ```JS
     som()
@@ -247,18 +271,28 @@ in case you have an array and wants to look at a specific element of that array,
     */
 ```
 
-
+In case you want to return something different than the default value set in your class, you can pass a second parameter.
 
 
 ### Handling path error
 
 The `som` instance should be robust enough so it doesn't break when a wrong path is used.\
-If a wrong path is used, the `get` method will return undefined\
+If a wrong path is used, the `get` method will return undefined or the fallback passed as 2nd parameter\
 If a wrong path is used, the `assign` method will create the new path for the element proposed.
 
 ### Removing fields
 
 The same way that for assigning value, you can delete a specific reference by specifying the path.\
+Method description:
+
+* remove
+  Remove the value present at the path selected. If it is an object, remove the whole object.
+  Arguments:
+  * path : OPTIONAL : path with dot notation such as `tenant.array.0.firstname`
+  * key : OPTIONAL : If you want to remove the key as well, then set to `true`
+
+#### Examples
+
 For this object:
 ```JS
 {

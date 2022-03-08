@@ -7,20 +7,20 @@ class Som{
      */
     constructor(object,df=undefined) {
         this.data = {};
-        this.defaultv = df;
+        this.defaultvalue = df;
         if (typeof(object) == 'object' && (object instanceof Som) == false){
             if(Array.isArray(object) && object.length > 0){
                 object.forEach(function(element){
-                    this.data = Object.assign(this.data,element)
+                    this.data = Object.assign(this.data,JSON.parse(JSON.stringify(element)));
                 })
 
             }
             else{
-                this.data = Object.assign({},object)
+                this.data = Object.assign({},JSON.parse(JSON.stringify(object)));
             }
         }
         else if (typeof(object) == 'object' && (object instanceof Som) == true){
-            this.data = Object.assign({},object.data)
+            this.data = Object.assign({},JSON.parse(JSON.stringify(object.data)));
         }
     }
 
@@ -46,13 +46,13 @@ class Som{
                     }
                 } 
                 else if(Array.isArray(v) && Math.abs(parseInt(pS[i]))>v.length){ // trying to access above # of elements
-                    v = fallback || this.defaultv || undefined
+                    v = fallback || this.defaultvalue || undefined
                 }
                 else {
                     v = v[pS[i]];
                 }
             }
-            return v || fallback || this.defaultv || undefined
+            return v || fallback || this.defaultvalue || undefined
         }
     }
 
@@ -143,7 +143,7 @@ class Som{
     */
     merge(object,path){
         if(typeof(path) == 'undefined' || path == ""){
-            this.data = Object.assign(this.data,object);
+            this.data = Object.assign(this.data,JSON.parse(JSON.stringify(object)));
             return this.data
         }
         else{
@@ -159,20 +159,20 @@ class Som{
                     }
                 } 
                 else if(Array.isArray(v) && Math.abs(parseInt(pS[i]))>v.length){ // trying to access above # of elements
-                    v = this.defaultv || undefined
+                    v = this.defaultvalue || undefined
                 }
                 else {
                     v = v[pS[i]];
                 }
             }
-            if(typeof(v) != 'undefined' || v != this.defaultv){
+            if(typeof(v) != 'undefined' || v != this.defaultvalue){
                 if (Array.isArray(v) && Array.isArray(object)){
                     object.forEach(function(element){
                         v.push(element);
                     })
                 }
                 else{
-                    var newv = Object.assign(v,object)
+                    var newv = Object.assign(v,JSON.parse(JSON.stringify(object)));
                     this.data = this.assign(path,newv)
                 }
                 return this.data
