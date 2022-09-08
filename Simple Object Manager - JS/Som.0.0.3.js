@@ -22,17 +22,31 @@ class Som{
           };
         if (typeof(object) == 'object' && (object instanceof Som) == false){
             if(Array.isArray(object) && object.length > 0){
+                let reference = this.data;
                 object.forEach(function(element){
-                    this.data = Object.assign(this.data,JSON.parse(JSON.stringify(element,getCircularReplacer())));
+                    reference = Object.assign(reference,JSON.parse(JSON.stringify(element)));
                 })
 
             }
             else{
-                this.data = Object.assign({},JSON.parse(JSON.stringify(object,getCircularReplacer())));
+                try{
+                    this.data = Object.assign({},JSON.parse(JSON.stringify(object)));
+                }
+                catch(e){
+                    console.warn('issue assigning object, trying removing circular references.');
+                    this.data = Object.assign({},JSON.parse(JSON.stringify(object,getCircularReplacer())));
+                }
             }
         }
         else if (typeof(object) == 'object' && (object instanceof Som) == true){
-            this.data = Object.assign({},JSON.parse(JSON.stringify(object.data,getCircularReplacer())));
+            try{
+                this.data = Object.assign({},JSON.parse(JSON.stringify(object.data)));
+            }
+            catch(e){
+                console.warn('issue assigning object, trying removing circular references.');
+                this.data = Object.assign({},JSON.parse(JSON.stringify(object.data,getCircularReplacer())));
+            }
+            
         }
     }
 
