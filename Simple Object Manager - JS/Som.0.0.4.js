@@ -85,12 +85,13 @@ class Som{
     /**
      * Assign a v to a path, creating a path if necessary
      * 
-     * @param {string} path 
-     * @param {object|string} v
+     * @param {string} path to assign to
+     * @param {object|string} v value to assign
+     * @param {object|string|undefined} df default value when value is undefined.
      */
-    assign(path, v){
+    assign(path, v,df=undefined){
         if (typeof v == "undefined"){
-            v = {}
+            v = df
         }
         if(typeof path != "undefined" && path != "" && typeof path == "string"){
             var pS = path.split('.');
