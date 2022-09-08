@@ -8,19 +8,31 @@ class Som{
     constructor(object,df=undefined) {
         this.data = {};
         this.defaultvalue = df;
+        function getCircularReplacer(){
+            const seen = new WeakSet();
+            return (key, value) => {
+              if (typeof value === 'object' && value !== null) {
+                if (seen.has(value)) {
+                  return;
+                }
+                seen.add(value);
+              }
+              return value;
+            };
+          };
         if (typeof(object) == 'object' && (object instanceof Som) == false){
             if(Array.isArray(object) && object.length > 0){
                 object.forEach(function(element){
-                    this.data = Object.assign(this.data,JSON.parse(JSON.stringify(element)));
+                    this.data = Object.assign(this.data,JSON.parse(JSON.stringify(element,getCircularReplacer())));
                 })
 
             }
             else{
-                this.data = Object.assign({},JSON.parse(JSON.stringify(object)));
+                this.data = Object.assign({},JSON.parse(JSON.stringify(object,getCircularReplacer())));
             }
         }
         else if (typeof(object) == 'object' && (object instanceof Som) == true){
-            this.data = Object.assign({},JSON.parse(JSON.stringify(object.data)));
+            this.data = Object.assign({},JSON.parse(JSON.stringify(object.data,getCircularReplacer())));
         }
     }
 
@@ -137,10 +149,13 @@ class Som{
         return this.data
     }
 
-    /** the merge method will take a path, and an existing object 
-     * @param {string} path where you want to merge the object
+    /** the merge method will take a path, and an existing object to merge it into that instance.
+     * It returns the result merge data.
+     * 
      * @param {object} object the object to merge
-    */
+     * @param {string} path where you want to merge the object
+     * 
+     */
     merge(object,path){
         if(typeof(path) == 'undefined' || path == ""){
             this.data = Object.assign(this.data,JSON.parse(JSON.stringify(object)));
