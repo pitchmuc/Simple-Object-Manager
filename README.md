@@ -2,18 +2,18 @@
 
 The Simple Object Manager (`Som`) is a project that tends to create a object containing methods helping you on manipulating data object representation.\
 
-This object can be available on a global scale (window) and can be instanciated multiple times, so you can handle different instances of the `Som`.
+By default, this object can be available on a global scale (window) and can be instanciated multiple times, so you can handle different instances of the `Som`.
 
 The goal of this library is to facilitate the object management for less advanced users that have to deal with complex data representation (Objects, Arrays interlocked).\
 Working with objects can be cumbersome and bring issues on your data collection implementation. These issues leads to either workarounds or just failing the data collection altogether.
 
 You can find more information on that project and the different methods supported in the following sections.
 
-## Simple Object Manager origin
+## Simple Object Manager Philosophy
 
 This documentation will provide you the philosophy and use-cases cases supported by the Simple Object Manager.\
 
-[Simple Object Manager Origin](Simple_Object_Manager_Origin.md)
+[Simple Object Manager Philosophy](Simple_Object_Manager_Origin.md)
 
 ## Methods
 
@@ -38,5 +38,6 @@ This [link](https://github.com/pitchmuc/Simple-Object-Manager/tree/main/Simple%2
 
 ### Simple Object Manager - Launch Extension [tbd]
 
-## Releases [tbd]
-Once a stable version is realized, any further improvement or modification will be documented in this section.
+## Releases
+Once a stable version is achieved, any further improvement or modification will be documented in this section.\
+[Link to release note](./release.md).

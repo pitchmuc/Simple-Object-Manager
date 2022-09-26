@@ -22,6 +22,17 @@ som3 = new Som(som1) /* Using the som1 as template - som1 could contains some at
 som4 = new Som([som1,som2]) /* merging different object together - following the order of the arguments */
 ```
 
+The data located in the Som instance are accessible via a `.get()` method (see [Accessing data](./Simple_Object_Manager_Methods.md#Accessing_data]) part) or via the `data` attribute.\
+Looking at som2 in the example below:
+
+```JS
+som2.data
+// will return
+{
+    "foo": "bar"
+}
+
+```
 
 ## Methods
 
@@ -36,7 +47,9 @@ Method description:
   Assign a value to a specific path provided.
   Arguments:
   * path : REQUIRED : path using the dot notation to specify where to place the value.
-  * value : REQUIRED : Value to be assigned 
+  * value : REQUIRED : Value to be assigned
+
+In case the value is `undefined`, the `undefined` value has been added to the key.\
 
 #### Examples
 such as:
@@ -67,7 +80,7 @@ You can also directly pass object in the value such as:
     */
 ```
 
-or array:
+or array directly in the value:
 ```JS
     som.assign('_tenant',[{'firstname':'julien'},{'firstname':'jennifer'}])
     /*
@@ -78,12 +91,15 @@ or array:
             "firstname" : "julien"
             },
             {
-            "firstname" : "julien"
+            "firstname" : "jennifer"
             }
         ]
     }
     */
 ```
+via dot notation:
+
+
 
 The `som` object accepts the dot notation for path, even for arrays.
 In case, you want to assign only a specific key value to an array. You can directly do so:
@@ -100,23 +116,38 @@ In case, you want to assign only a specific key value to an array. You can direc
     }
     */
 ```
-As you may have understood, if the element of the array is not present, the `som` automatically push the element to a new element of your array.
+or passing an object
+```JS
+    som.assign('_tenant.0',{'firstname':'julien'})
+    /*
+    This will result in adding this element:
+    {
+        "_tenant":[
+            {
+            "firstname" : "julien"
+            }
+        ]
+    }
+    */
+```
 
-In case, you do not assign any value, the `som` will create an empty object instead.
+As you may have understood, if the element of the array is not present, the `som` automatically push the element to a new element of your array.
+In case, you do not assign any value, the `som` will set an `undefined` value instead.
 ```JS
     som.assign('_tenant.myArray.1.firstname',)
     /*
     This will result in adding this element:
     {
         "_tenant":{
-            [
-                {},
-            ]
+            myArray: 
+                [
+                    {firstname : undefined},
+                ]
         }    
     }
     */
 ```
-
+see above how the element is on position 0, even though you pushed position 1, because no position 0 existed.
 
 ### Merging object
 
@@ -136,7 +167,8 @@ Method description:
 #### Examples
 
 ```JS
-var myObject = {"foo":"bar","foo":"baz"}
+let myObject = {"foo":"bar","foo":"baz"}
+let som = new Som({"test":"value"})
 som.data // returns
 /* 
 * {
@@ -356,9 +388,9 @@ som.remove('tenant.commerce');
 
 ## Launch extension compatible
 
-The library should be easily loadable in a Launch extension. It means being written in ES5. :(
+The library should be easily loadable in a Launch extension.
 
-Ideally, the instanciation of a XDM Object Manager can be done via Data Element setup, such as: 
+Ideally, the instanciation of a XDM Object Manager instance can be done via Data Element setup, such as: 
 ```JS
 som1 = _satellite.getVar('DataElementsomReference')
 ```
