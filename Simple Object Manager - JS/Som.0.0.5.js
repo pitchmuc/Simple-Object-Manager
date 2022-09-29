@@ -2,10 +2,11 @@
 class Som{
     /**
      * 
-     * @param {object} object 
-     * @param {string} df 
+     * @param {object} object object that will be copy
+     * @param {string} df default value used in the get method
+     * @param {boolean} deepcopy boolean, if the object copied is deepcopied or not (default: true)
      */
-    constructor(object,df=undefined) {
+    constructor(object,df=undefined,deepcopy=true) {
         this.data = {};
         this.defaultvalue = df;
         function getCircularReplacer(){
@@ -24,13 +25,22 @@ class Som{
             if(Array.isArray(object) && object.length > 0){
                 let reference = this.data;
                 object.forEach(function(element){
-                    reference = Object.assign(reference,JSON.parse(JSON.stringify(element)));
+                    if(deepcopy){
+                        reference = Object.assign(reference,JSON.parse(JSON.stringify(element)));
+                    }
+                    else{
+                        reference = Object.assign(reference,element)
+                    }
                 })
 
             }
             else{
                 try{
-                    this.data = Object.assign({},JSON.parse(JSON.stringify(object)));
+                    if(deepcopy){
+                        this.data = Object.assign({},JSON.parse(JSON.stringify(object)));
+                    }else{
+                        this.data = object;
+                    }
                 }
                 catch(e){
                     console.warn('issue assigning object, trying removing circular references.');
@@ -50,9 +60,10 @@ class Som{
         }
     }
 
-    /** Getter of the Xom class instanciation.
+    /** Getter of the Som class instanciation.
      *  
      * @param {string} path can be empty to return the whole object or a specific path such as "tenant.firstname"
+     * @param {string|object} fallback if the field is not found in the Som, can provide a fallback value to be returned.
      * @returns {object|string} 
      */
     get(path,fallback){
@@ -87,11 +98,11 @@ class Som{
      * 
      * @param {string} path to assign to
      * @param {object|string} v value to assign
-     * @param {object|string|undefined} df default value when value is undefined.
+     * @param {object|string|undefined} fallback fallback value when value specified in "v" is undefined. Default : undefined
      */
-    assign(path, v,df=undefined){
+    assign(path, v,fallback=undefined){
         if (typeof v == "undefined"){
-            v = df
+            v = fallback
         }
         if(typeof path != "undefined" && path != "" && typeof path == "string"){
             var pS = path.split('.');
