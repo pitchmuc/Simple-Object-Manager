@@ -306,6 +306,63 @@ in case you have an array and wants to look at a specific element of that array,
 In case you want to return something different than the default value set in your class, you can pass a second parameter.
 
 
+### Pushing elements
+
+The Som object can push some elements to a specific path. The `push` method can take 3 arguments.
+* push
+  Push the value present at the path selected. Can behave differently dependant one parameter
+  Arguments:
+  * path : REQUIRED : path with dot notation such as `tenant.array.0.firstname`
+  * value : REQUIRED : a value to push into an array.
+  * override : OPTIONAL : If set to `true`, replace the existing element with an array the value you pushed.
+                        Default is `false`, therefore keeping any value previously set. If the previous element is not an array, it keeps it and place it at index 0 of the array, pushing the new value afterwards.
+
+#### Examples
+```JS
+    let som = new Som({"test":"value"})
+    som.data // returns
+    /* 
+    * {
+    *   "test" : "value"
+    * }
+    */ 
+   som.push('foo','bar');
+   som.data // returns
+   /* 
+    * {
+    *   "test" : "value",
+    *   "foo": ['bar']
+    * }
+    */ 
+   som.push('foo','baz');
+   som.data // returns
+   /* 
+    * {
+    *   "test" : "value",
+    *   "foo": ['bar','baz']
+    * }
+    */ 
+   som.push('test','something else');
+   som.data // returns
+   /* 
+    * {
+    *   "test" : ["value","something else"],
+    *   "foo": ['bar','baz']
+    * }
+    */ 
+   som.push('test','new state',true);
+   som.data // returns
+   /* 
+    * {
+    *   "test" : ['new state'],
+    *   "foo": ['bar','baz']
+    * }
+    */ 
+
+```
+
+
+
 ### Handling path error
 
 The `som` instance should be robust enough so it doesn't break when a wrong path is used.\
