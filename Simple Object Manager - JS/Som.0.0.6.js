@@ -26,7 +26,14 @@ class Som{
                 let reference = this.data;
                 object.forEach(function(element){
                     if(deepcopy){
-                        reference = Object.assign(reference,JSON.parse(JSON.stringify(element)));
+                        try{
+                            reference = Object.assign(reference,JSON.parse(JSON.stringify(element)));
+                        }
+                        catch(e){
+                            console.warn('issue assigning object, trying removing circular references.');
+                            reference = Object.assign(reference,JSON.parse(JSON.stringify(element,getCircularReplacer())));
+                        }
+                        
                     }
                     else{
                         reference = Object.assign(reference,element)
@@ -104,6 +111,7 @@ class Som{
         if (typeof v == "undefined"){
             v = fallback
         }
+        let override = (arguments[3]=='override')?true:false;
         if(typeof path != "undefined" && path != "" && typeof path == "string"){
             var pS = path.split('.');
             /* define path and create it if required */
@@ -113,7 +121,12 @@ class Som{
                     if(Object(xom).hasOwnProperty(pS[i])){// if path present
                         if (i == pS.length -1){ // if it is the last element
                             if(Array.isArray(xom[pS[i]])){ // if it is an array
-                                xom[pS[i]].push(v)
+                                if(override){
+                                    xom[pS[i]] = v
+                                }else{
+                                    xom[pS[i]].push(v)
+                                }
+                                
                             }
                             else{
                                 xom[pS[i]] = v
@@ -182,7 +195,20 @@ class Som{
      * @param {string} path where you want to merge the object
      * 
      */
-    merge(object,path){
+    merge(path,object){
+        if(typeof path == "object" && typeof object == "undefined"){
+            object = path;
+            path = undefined;
+        }
+        else if(typeof path == "string" && typeof object == "object") {
+            path = path;
+            object = object;
+        }
+        else if(typeof path == "object" && typeof object == "string"){
+            let tmp_object = path;
+            path = object;
+            object = tmp_object
+        }
         if(typeof(path) == 'undefined' || path == ""){
             this.data = Object.assign(this.data,JSON.parse(JSON.stringify(object)));
             return this.data
@@ -281,6 +307,30 @@ class Som{
             }
         }
         }
+    }
+
+    push(path, v,override=false){
+        if (path == "" || typeof path === "undefined"){ /*transforming the object to an array*/
+            this.data = [this.data];
+            this.data.push(v)
+        }
+        else if (path.length>0){
+            let c_r = this.get(path);
+            /* no element before OR the user wants to replace the v */
+            if((typeof c_r=='undefined')||override){ 
+                this.assign(path,[v],undefined,'override')
+            }
+            else if (Array.isArray(c_r)){
+                c_r.push(v);
+            }
+            else if(typeof(c_r)=='object' || typeof(c_r)=="string"){
+                if(override == false){ /* if the user want to keep the original v */
+                    let n_v = [c_r,v]
+                    this.assign(path,n_v)
+                }
+            }
+        }
+        return this.data
     }
 
     clear(){

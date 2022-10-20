@@ -159,8 +159,8 @@ Method description:
 * merge
   Merge an object to your existing Som object. It uses JSON.stringify method to deep copy it.
   Arguments:
-  * object : REQUIRED : The object to merge
   * path : OPTIONAL : path using the dot notation to specify where to place the value.
+  * object : REQUIRED : The object to merge
 
 
 
@@ -199,7 +199,7 @@ som.data // returns
  }
 */ 
 
-som.merge(object=myObject,'test') 
+som.merge('test', object=myObject) 
 // returns
 {
     "test":{
