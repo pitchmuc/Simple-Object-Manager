@@ -17,9 +17,10 @@ This documentation will provide you the philosophy and use-cases cases supported
 
 ## Methods
 
-This documentation will provide you with documentation on how to instantiate the `Som` class and the different methods available from the `Som` instance.
-
+This documentation will provide you with documentation on how to instantiate the `Som` class and the different methods available from the `Som` instance.\
 [Simple Object Manager Methods](Simple_Object_Manager_Methods.md)
+
+If you are more of hands-on test enthusiast, you can directly see the [cheat sheet](Simple_Object_Manager_CheatSheet.md) 
 
 ## FAQ
 
