@@ -361,13 +361,181 @@ The Som object can push some elements to a specific path. The `push` method can 
 
 ```
 
+### replace
+
+The `replace` method will allow you to replace one value in your object by another one.\
+It doesn't return anything but change the Som object itself.
+It takes 2 arguments, the old and the new value.
+* replace
+  replace the value provided by a new value provided in your object
+  Arguments:
+  * old_value : REQUIRED : the value you want to replace
+  * new_value : REQUIRED : the new value you want to set
+
+Example
+
+```JS
+
+let object1 = {
+    "key1":"example",
+    "array1":['value1','value2'],
+    "object1":{
+        "nested1":"value3"
+    },
+    "array2":[
+        {"key1":"value4"}
+    ]
+    }
+
+mySom = new Som(object1);
+
+// Normal value replacement
+mySom.replace('example','replace1');
+mySom.data //will show
+/**
+ {
+    "key1":"replace1",
+    "array1":['value1','value2'],
+    "object1":{
+        "nested1":"value3"
+    },
+    "array2":[
+        {"key1":"value4"}
+    ]
+  }
+ * 
+ * 
+*/
+
+// in array value replacement
+mySom.replace('value2','replace2');
+mySom.data //will show
+/**
+ {
+    "key1":"replace1",
+    "array1":['value1','replace2'],
+    "object1":{
+        "nested1":"value3"
+    },
+    "array2":[
+        {"key1":"value4"}
+    ]
+  }
+ * 
+ * 
+*/
+
+// in nested object value replacement
+mySom.replace('value3','replace3');
+mySom.data //will show
+/**
+ {
+    "key1":"replace1",
+    "array1":['value1','replace2'],
+    "object1":{
+        "nested1":"replace3"
+    },
+    "array2":[
+        {"key1":"value4"}
+    ]
+  }
+ * 
+ * 
+*/
+
+// in array of object value replacement
+mySom.replace('value4','replace4');
+mySom.data //will show
+/**
+ {
+    "key1":"replace1",
+    "array1":['value1','replace2'],
+    "object1":{
+        "nested1":"replace3"
+    },
+    "array2":[
+        {"key1":"replace4"}
+    ]
+  }
+ * 
+ * 
+*/
 
 
-### Handling path error
 
-The `som` instance should be robust enough so it doesn't break when a wrong path is used.\
-If a wrong path is used, the `get` method will return undefined or the fallback passed as 2nd parameter\
-If a wrong path is used, the `assign` method will create the new path for the element proposed.
+```
+
+### mergeDeep
+
+It is possible that you want to merge more complex object with your current Som object.\
+The `merge` method allows you to specify if you want to merge your new object at a specific location of your current som object, by providing the `path` arguments.\
+However, you may, sometimes, have complex object that change different layer of your object.\
+In that case, the `mergeDeep` method will allow you to realize granular change on all nested elements of your object.\
+
+NOTE: In case of array, the `mergeDeep` method will push the new element in the array. Extending its number of elements.
+
+* mergeDeep:
+  Deep merge the object provided with the existing Som object
+  Arguments:
+  * object : REQUIRED : the object you want to deep merge with the existing Som object 
+
+```JS
+let object1 = {
+    "key1":"example",
+    "array1":['value1','value2'],
+    "object1":{
+        "nested1":"value3"
+    },
+    "array2":[
+        {"key1":"value4"}
+    ]
+    }
+
+mySom = new Som(object1);
+
+let object2 = {
+    "key2": "example",
+    "array1":['value5'],
+    "object1":{
+        "nested2":"value6"
+    },
+    "array2":[
+        {"key2":"value7"},
+        {"key3":"value8"},
+    ]
+}
+mySom.mergeDeep(object2);
+mySom.data // will show
+/*
+{
+    "key1": "example",
+    "key2": "example",
+    "array1": [
+        "value1",
+        "value2",
+        "value5"
+    ],
+    "object1": {
+        "nested1": "value3",
+        "nested2": "value6"
+    },
+    "array2": [
+        {
+            "key1": "value4",
+            "key2": "value7"
+        },
+        {
+            "key3": "value8"
+        }
+    ]
+}
+
+
+*/
+
+```
+
+
 
 ### Removing fields
 
@@ -442,6 +610,12 @@ som.remove('tenant.commerce');
     }
 }
 ``` 
+### Handling path error
+
+The `som` instance should be robust enough so it doesn't break when a wrong path is used.\
+If a wrong path is used, the `get` method will return undefined or the fallback passed as 2nd parameter\
+If a wrong path is used, the `assign` method will create the new path for the element proposed.
+
 
 ## Launch extension compatible
 

@@ -308,8 +308,14 @@ class Som{
         }
         }
     }
-
-    push(path, v,override=false){
+    /**
+     * 
+     * @param {*} path path where to push the element to
+     * @param {*} v value to push
+     * @param {*} o override. set to false by default. It means that any existing value in that path will be kept. if set to true, replacing the value of that path with an array with the value set. 
+     * @returns return the whole data with that new elements.
+     */
+    push(path, v,o=false){
         if (path == "" || typeof path === "undefined"){ /*transforming the object to an array*/
             this.data = [this.data];
             this.data.push(v)
@@ -317,20 +323,108 @@ class Som{
         else if (path.length>0){
             let c_r = this.get(path);
             /* no element before OR the user wants to replace the v */
-            if((typeof c_r=='undefined')||override){ 
+            if((typeof c_r=='undefined')||o){ 
                 this.assign(path,[v],undefined,'override')
             }
             else if (Array.isArray(c_r)){
                 c_r.push(v);
             }
             else if(typeof(c_r)=='object' || typeof(c_r)=="string"){
-                if(override == false){ /* if the user want to keep the original v */
+                if(o == false){ /* if the user want to keep the original v */
                     let n_v = [c_r,v]
                     this.assign(path,n_v)
                 }
             }
         }
         return this.data
+    }
+
+    /**
+     * 
+     * @param {object} o the object to deep merge with the current Som object.
+     * @param {object} s source to merge data
+     * It doesn't return anything and replace the current Som object.
+     */
+    mergeDeep(o,s){
+        if (typeof o !== 'object'){
+            throw new Error('expect an object as input')
+        }
+        let mNO = s || this.data;
+        for (let key in o){
+            if(typeof o[key] !== "object"){ /** Element is simple */
+                mNO[key] = o[key]
+            }
+            else if(typeof o[key] === "object"){ /** Element is complex */
+                if(typeof mNO[key] !== "object"){ /** Original was not an object */
+                    mNO[key] = o[key]
+                }
+                else if(Array.isArray(o[key]) === false && Array.isArray(mNO[key]) === false){
+                    this.mergeDeep(o[key],mNO[key])
+                }
+                else if(Array.isArray(o[key]) && Array.isArray(mNO[key])){
+                    for(let i=0;i<Math.max(o[key].length,mNO[key].length);i++){
+                        if(o[key][i] === undefined){
+                            // nothing to be done here
+                        }
+                        else if(mNO[key][i]=== undefined) {
+                            mNO[key][i] = o[key][i]
+                        }
+                        else{
+                            if(typeof o[key][i] !== "object"){
+                                if(mNO[key].indexOf(o[key][i])== -1){
+                                    mNO[key].push(o[key][i])
+                                }
+                            }
+                            else{
+                                this.mergeDeep(o[key][i],mNO[key][i])
+                            }
+                            
+                        }
+                    }
+                } 
+            }
+        }
+        return undefined
+
+    }
+
+    /**
+     * 
+     * @param {string} o_v old value to find
+     * @param {string|undefined} n_v new value to be set
+     * @returns undefined
+     */
+    replace(o_v,n_v){
+        let o = arguments[2] || this.data; // argument used for recursion
+        if(typeof o == 'object'){
+            for(let k in o){
+                if(typeof o[k] !== "object"){
+                    if (o[k] == o_v){
+                        o[k] = n_v
+                    }
+                }
+                else if (typeof o[k]=='object'){
+                    if(Array.isArray(o[k])){
+                        let t = this; /* save "this" */
+                        let i = o[k].indexOf(o_v) /* if simple array of values */
+                        if(i!=-1){
+                            o[k][i] = n_v
+                        }
+                        else{
+                            o[k].forEach(function(el){
+                                if(typeof el == "object"){/* ensuring only object can enter recursion */
+                                    t.replace(o_v,n_v,el)
+                                }
+                        })
+                        }
+                    }
+                    else{
+                        this.replace(o_v,n_v,o[k])
+                    }
+                }
+            }
+        }
+        return undefined
     }
 
     clear(){
