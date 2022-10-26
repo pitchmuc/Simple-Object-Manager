@@ -151,6 +151,7 @@ see above how the element is on position 0, even though you pushed position 1, b
 
 ### Merging object
 
+#### Merge
 You can merge an existing object with the data contain in your `som` object.\
 The method uses the the `Object.assign` method from JavaScript.
 In order to do that, you can call the `merge` function that will apply the merge at the level pass through the additional `path` parameter.\
@@ -235,6 +236,77 @@ som.merge(newMembers,'family_members')
 }
 
 ```
+
+#### mergeDeep
+
+It is possible that you want to merge more complex object with your current Som object.\
+The `merge` method allows you to specify if you want to merge your new object at a specific location of your current som object, by providing the `path` arguments.\
+However, you may, sometimes, have complex object that change different layer of your object.\
+In that case, the `mergeDeep` method will allow you to realize granular change on all nested elements of your object.\
+
+NOTE: In case of array, the `mergeDeep` method will push the new element in the array. Extending its number of elements.
+
+* mergeDeep:
+  Deep merge the object provided with the existing Som object
+  Arguments:
+  * object : REQUIRED : the object you want to deep merge with the existing Som object 
+
+```JS
+let object1 = {
+    "key1":"example",
+    "array1":['value1','value2'],
+    "object1":{
+        "nested1":"value3"
+    },
+    "array2":[
+        {"key1":"value4"}
+    ]
+    }
+
+mySom = new Som(object1);
+
+let object2 = {
+    "key2": "example",
+    "array1":['value5'],
+    "object1":{
+        "nested2":"value6"
+    },
+    "array2":[
+        {"key2":"value7"},
+        {"key3":"value8"},
+    ]
+}
+mySom.mergeDeep(object2);
+mySom.data // will show
+/*
+{
+    "key1": "example",
+    "key2": "example",
+    "array1": [
+        "value1",
+        "value2",
+        "value5"
+    ],
+    "object1": {
+        "nested1": "value3",
+        "nested2": "value6"
+    },
+    "array2": [
+        {
+            "key1": "value4",
+            "key2": "value7"
+        },
+        {
+            "key3": "value8"
+        }
+    ]
+}
+
+
+*/
+
+```
+
 
 ### Accessing data
 
@@ -464,77 +536,6 @@ mySom.data //will show
 
 
 ```
-
-### mergeDeep
-
-It is possible that you want to merge more complex object with your current Som object.\
-The `merge` method allows you to specify if you want to merge your new object at a specific location of your current som object, by providing the `path` arguments.\
-However, you may, sometimes, have complex object that change different layer of your object.\
-In that case, the `mergeDeep` method will allow you to realize granular change on all nested elements of your object.\
-
-NOTE: In case of array, the `mergeDeep` method will push the new element in the array. Extending its number of elements.
-
-* mergeDeep:
-  Deep merge the object provided with the existing Som object
-  Arguments:
-  * object : REQUIRED : the object you want to deep merge with the existing Som object 
-
-```JS
-let object1 = {
-    "key1":"example",
-    "array1":['value1','value2'],
-    "object1":{
-        "nested1":"value3"
-    },
-    "array2":[
-        {"key1":"value4"}
-    ]
-    }
-
-mySom = new Som(object1);
-
-let object2 = {
-    "key2": "example",
-    "array1":['value5'],
-    "object1":{
-        "nested2":"value6"
-    },
-    "array2":[
-        {"key2":"value7"},
-        {"key3":"value8"},
-    ]
-}
-mySom.mergeDeep(object2);
-mySom.data // will show
-/*
-{
-    "key1": "example",
-    "key2": "example",
-    "array1": [
-        "value1",
-        "value2",
-        "value5"
-    ],
-    "object1": {
-        "nested1": "value3",
-        "nested2": "value6"
-    },
-    "array2": [
-        {
-            "key1": "value4",
-            "key2": "value7"
-        },
-        {
-            "key3": "value8"
-        }
-    ]
-}
-
-
-*/
-
-```
-
 
 
 ### Removing fields
