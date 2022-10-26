@@ -12,6 +12,10 @@ Each of the instance will possess their own attributes, and the instances can be
 Ideally an existing XDM Object Manager object can be used as reference of the instanciation.
 
 You can also pass directly a JSON / JS reference in the schema directly during instanciation.
+It can takes 3 arguments:
+* orignalObject: The original object you want to feed your Som object with
+* defaultValue: the default value to return when the getter do not find any value. `undefined` is the default value.
+* deepcopy: Default is set to true, so we have 
 
 Such as:
 
@@ -20,6 +24,8 @@ som1 = new Som()
 som2 = new Som({'foo':'bar'})
 som3 = new Som(som1) /* Using the som1 as template - som1 could contains some attributes*/
 som4 = new Som([som1,som2]) /* merging different object together - following the order of the arguments */
+let myObj= {'foo':'bar'}
+som4 = new Som(myObj,undefined,false) /* copying the object but not deepcopying it as last argument is set to false */
 ```
 
 The data located in the Som instance are accessible via a `.get()` method (see [Accessing data](./Simple_Object_Manager_Methods.md#Accessing_data]) part) or via the `data` attribute.\
@@ -249,6 +255,8 @@ NOTE: In case of array, the `mergeDeep` method will push the new element in the 
 * mergeDeep:
   Deep merge the object provided with the existing Som object
   Arguments:
+  * path : OPTIONAL : if a path is provided in the original object to identify where to do the merge.
+                    The path can only reference an object.
   * object : REQUIRED : the object you want to deep merge with the existing Som object 
 
 ```JS

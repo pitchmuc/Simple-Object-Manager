@@ -340,12 +340,22 @@ class Som{
     }
 
     /**
-     * 
+     * @param {string} p path to the element you want to merge
      * @param {object} o the object to deep merge with the current Som object.
      * @param {object} s source to merge data
      * It doesn't return anything and replace the current Som object.
      */
-    mergeDeep(o,s){
+    mergeDeep(p,o,s){
+
+        if(typeof p === "string"){ /* if path is provided */
+            o = o;
+            s = s || this.get(p);
+
+        }
+        else if(typeof p =="object"){/* if path is not provided and an object is provided*/
+            s = o || this.data;
+            o = p;
+        }
         if (typeof o !== 'object'){
             throw new Error('expect an object as input')
         }
