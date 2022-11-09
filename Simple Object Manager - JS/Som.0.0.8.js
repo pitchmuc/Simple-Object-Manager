@@ -244,6 +244,10 @@ class Som{
                 }
                 return this.data
             }
+            else{
+                this.assign(path,object)
+                return this.data
+            }
         }
 
     }
@@ -402,15 +406,27 @@ class Som{
      * 
      * @param {string} o_v old value to find
      * @param {string|undefined} n_v new value to be set
+     * @param {bool} regex if the old value is a regular expression. It will match 
      * @returns undefined
      */
-    replace(o_v,n_v){
-        let o = arguments[2] || this.data; // argument used for recursion
+    replace(o_v,n_v,regex=false){
+        let o = arguments[3] || this.data; // argument used for recursion
+        let myregexTest;
+        if (regex){
+            myregexTest = new RegExp(o_v)
+        }
         if(typeof o == 'object'){
             for(let k in o){
                 if(typeof o[k] !== "object"){
-                    if (o[k] == o_v){
-                        o[k] = n_v
+                    if (regex){
+                        if(myregexTest.test(o[k])){
+                            o[k] = n_v;
+                        }
+                    }
+                    else{
+                        if (o[k] == o_v){
+                            o[k] = n_v;
+                        }
                     }
                 }
                 else if (typeof o[k]=='object'){
@@ -418,18 +434,18 @@ class Som{
                         let t = this; /* save "this" */
                         let i = o[k].indexOf(o_v) /* if simple array of values */
                         if(i!=-1){
-                            o[k][i] = n_v
+                            o[k][i] = n_v;
                         }
                         else{
                             o[k].forEach(function(el){
                                 if(typeof el == "object"){/* ensuring only object can enter recursion */
-                                    t.replace(o_v,n_v,el)
+                                    t.replace(o_v,n_v,regex,el)
                                 }
                         })
                         }
                     }
                     else{
-                        this.replace(o_v,n_v,o[k])
+                        this.replace(o_v,n_v,regex,o[k])
                     }
                 }
             }
