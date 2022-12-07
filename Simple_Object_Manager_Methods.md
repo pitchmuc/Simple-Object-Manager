@@ -5,6 +5,19 @@ Overall, all of the methods provided are wrapper around existing methods or help
 
 Once the 0.1.0 release version is live, the methods described here will be maintained and any new version of the library will contain backward compatibility change.
 
+- [Instantiation](#Instantiation)
+- [Methods](#Methods)
+    - [Assigning value(s)](##assigning-values)
+    - [Merging objects](#merging-object)
+        - [merge method](#merge)
+        - [mergedeep method](#mergedeep)
+    - [Accessing data](#accessing-data)
+    - [Pushing elements into array](#pushing-elements)
+    - [Replacing the values at scale](#replace)
+    - [Removing fields](#removing-fields)
+    - [Clear method](#clear)
+- [Handling path error](#handling-path-error)
+
 ## Instantiation
 
 The library is referencing a class that can be instanciated multiple time per page.\
@@ -599,6 +612,8 @@ You can also specify to remove the key itself, by passing a boolean in the `key`
 By default, if you are giving a path that contains an object, then the whole object is removed.\
 Imagine this object:
 ```JS
+mysom.data
+//returning this:
 {
     "tenant" : {
         "commerce":{
@@ -611,14 +626,43 @@ Imagine this object:
 ```
 if you are to pass `tenant.commerce`, because `commerce` is an object, it automatically delete the whole element.
 ```JS
-som.remove('tenant.commerce');
+mysom.remove('tenant.commerce');
 // will result in:
 {
     "tenant" : {
         "order":0
     }
 }
-``` 
+```
+
+### clear
+
+The SOM instance can be cleaned completely from any data.\
+For this purpose, the `clear` method is available and will restate the data of the SOM object to `{}`
+
+```JS
+mysom.data;
+/* it will return this
+{
+    "tenant" : {
+        "commerce":{
+            "cartAddition" :1,
+            "cartRemoval" :0,
+        },
+        "order":0
+    }
+}
+*/
+/// operations
+mysom.clear();
+mysom.data;
+/* it will return this
+{}
+*/
+
+
+```
+
 ### Handling path error
 
 The `som` instance should be robust enough so it doesn't break when a wrong path is used.\
