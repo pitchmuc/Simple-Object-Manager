@@ -28,7 +28,7 @@ You can also pass directly a JSON / JS reference in the schema directly during i
 It can takes 3 arguments:
 * orignalObject: The original object you want to feed your Som object with
 * defaultValue: the default value to return when the getter do not find any value. `undefined` is the default value.
-* deepcopy: Default is set to true, so we have 
+* deepcopy: Default is set to true, so we have a deep copy of the element and do not modify the data source.
 
 Such as:
 
