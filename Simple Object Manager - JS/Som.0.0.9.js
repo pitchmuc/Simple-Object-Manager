@@ -96,6 +96,9 @@ class Som{
                     v = v[pS[i]];
                 }
             }
+            if (v === "" || (typeof v === 'undefined' & fallback == "")){
+                return ""
+            }
             return v || fallback || this.defaultvalue || undefined
         }
     }
