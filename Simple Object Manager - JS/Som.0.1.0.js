@@ -409,11 +409,12 @@ class Som{
      * 
      * @param {string} o_v old value to find
      * @param {string|undefined} n_v new value to be set
-     * @param {bool} regex if the old value is a regular expression. It will match 
+     * @param {bool} regex if the old value is a regular expression. It will match
+     * @param {object} data in the recursion, passing the data attribute 
      * @returns undefined
      */
-    replace(o_v,n_v,regex=false){
-        let o = arguments[3] || this.data; // argument used for recursion
+    replace(o_v,n_v,regex=false,data){
+        let o = data || this.data; // argument used for recursion
         let myregexTest;
         if (regex){
             myregexTest = new RegExp(o_v)
@@ -448,7 +449,13 @@ class Som{
                         }
                     }
                     else{
-                        this.replace(o_v,n_v,regex,o[k])
+                        if(o[k] != undefined && typeof o[k]!= "undefined"){/* ensuring no undefined is being sent */
+                            this.replace(o_v,n_v,regex,o[k])
+                        }
+                        else{
+                            return undefined
+                        }
+                        
                     }
                 }
             }
