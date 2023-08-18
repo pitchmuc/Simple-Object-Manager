@@ -5,6 +5,19 @@ Overall, all of the methods provided are wrapper around existing methods or help
 
 Once the 0.1.0 release version is live, the methods described here will be maintained and any new version of the library will contain backward compatibility change.
 
+- [Instantiation](#Instantiation)
+- [Methods](#Methods)
+    - [Assigning value(s)](##assigning-values)
+    - [Merging objects](#merging-object)
+        - [merge method](#merge)
+        - [mergedeep method](#mergedeep)
+    - [Accessing data](#accessing-data)
+    - [Pushing elements into array](#pushing-elements)
+    - [Replacing the values at scale](#replace)
+    - [Removing fields](#removing-fields)
+    - [Clear method](#clear)
+- [Handling path error](#handling-path-error)
+
 ## Instantiation
 
 The library is referencing a class that can be instanciated multiple time per page.\
@@ -15,7 +28,7 @@ You can also pass directly a JSON / JS reference in the schema directly during i
 It can takes 3 arguments:
 * orignalObject: The original object you want to feed your Som object with
 * defaultValue: the default value to return when the getter do not find any value. `undefined` is the default value.
-* deepcopy: Default is set to true, so we have 
+* deepcopy: Default is set to true, so we have a deep copy of the element and do not modify the data source.
 
 Such as:
 
@@ -324,7 +337,7 @@ Method description:
 * get
   Return the value present at the path selected.
   Arguments:
-  * path : OPTIONAL : path with dot notation such as `tenant.array.0.firstname`
+  * path : OPTIONAL : path with dot notation such as `tenant.array.0.firstname` or an array of paths such as `['tenant.array.0.firstname','tenant.array.0.firstName']`
   * fallback : OPTIONAL : a value to return in case the selected path returns `undefined`
 
 #### Examples
@@ -599,6 +612,8 @@ You can also specify to remove the key itself, by passing a boolean in the `key`
 By default, if you are giving a path that contains an object, then the whole object is removed.\
 Imagine this object:
 ```JS
+mysom.data
+//returning this:
 {
     "tenant" : {
         "commerce":{
@@ -611,14 +626,43 @@ Imagine this object:
 ```
 if you are to pass `tenant.commerce`, because `commerce` is an object, it automatically delete the whole element.
 ```JS
-som.remove('tenant.commerce');
+mysom.remove('tenant.commerce');
 // will result in:
 {
     "tenant" : {
         "order":0
     }
 }
-``` 
+```
+
+### clear
+
+The SOM instance can be cleaned completely from any data.\
+For this purpose, the `clear` method is available and will restate the data of the SOM object to `{}`
+
+```JS
+mysom.data;
+/* it will return this
+{
+    "tenant" : {
+        "commerce":{
+            "cartAddition" :1,
+            "cartRemoval" :0,
+        },
+        "order":0
+    }
+}
+*/
+/// operations
+mysom.clear();
+mysom.data;
+/* it will return this
+{}
+*/
+
+
+```
+
 ### Handling path error
 
 The `som` instance should be robust enough so it doesn't break when a wrong path is used.\

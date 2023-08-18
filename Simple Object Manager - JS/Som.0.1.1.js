@@ -69,7 +69,7 @@ class Som{
 
     /** Getter of the Som class instanciation.
      *  
-     * @param {string} path can be empty to return the whole object or a specific path such as "tenant.firstname"
+     * @param {string|array} path can be empty to return the whole object or a specific path such as "tenant.firstname" or an array of path. The first one returning a value is used.
      * @param {string|object} fallback if the field is not found in the Som, can provide a fallback value to be returned.
      * @returns {object|string} 
      */
@@ -77,27 +77,49 @@ class Som{
         if(typeof(path) == "undefined" || path == ""){
             return this.data
         }
-        else if(typeof(path) == "string"){
-            var pS = path.split(".")
-            var v = this.data
-            for (var i = 0; i < pS.length && v != undefined; i++) { // Traverse until found or undefined
-                if (Array.isArray(v) && Math.abs(parseInt(pS[i]))<=v.length) { //If parent is array and path is in the index
-                    if(parseInt(pS[i])<0){ /** Negative number */
-                        v = v[v.length - Math.abs(parseInt(pS[i]))];
+        let paths = [];
+        if(!Array.isArray(path)){//ensuring consistent array manipulation
+            paths.push(path)
+        }
+        else{
+            paths = path
+        }
+        let results = {}
+        for (const path of paths) {
+            results[path] = {'pathSplit':'','value':undefined};
+        }
+        for (const path of paths){
+            if (typeof(path) == "string"){
+                results[path]['pathSplit'] = path.split(".");
+                let v = this.data;
+                let tmp_pathSplit = path.split(".");
+                for (var i = 0; i < tmp_pathSplit.length && v != undefined; i++) { // Traverse until found or undefined
+                    if (Array.isArray(v) && Math.abs(parseInt(tmp_pathSplit[i]))<=v.length) { //If parent is array and path is in the index
+                        if(parseInt(tmp_pathSplit[i])<0){ /** Negative number */
+                            v = v[v.length - Math.abs(parseInt(tmp_pathSplit[i]))];
+                        }
+                        else{
+                            v = v[parseInt(tmp_pathSplit[i])];
+                        }
+                    } 
+                    else if(Array.isArray(v) && Math.abs(parseInt(tmp_pathSplit[i]))>v.length){ // trying to access above # of elements
+                        v = fallback || this.defaultvalue || undefined
                     }
-                    else{
-                        v = v[parseInt(pS[i])];
+                    else {
+                        v = v[tmp_pathSplit[i]];
                     }
-                } 
-                else if(Array.isArray(v) && Math.abs(parseInt(pS[i]))>v.length){ // trying to access above # of elements
-                    v = fallback || this.defaultvalue || undefined
                 }
-                else {
-                    v = v[pS[i]];
+                if (v === "" || (typeof v === 'undefined' & fallback == "")){
+                    results[path]['value'] = ""
+                }
+                results[path]['value'] = v
                 }
             }
-            return v || fallback || this.defaultvalue || undefined
+        let result = ""
+        for (let res in results) {
+            result = result || results[res]['value'] 
         }
+        return result || fallback || this.defaultvalue || undefined
     }
 
     /**
@@ -406,11 +428,12 @@ class Som{
      * 
      * @param {string} o_v old value to find
      * @param {string|undefined} n_v new value to be set
-     * @param {bool} regex if the old value is a regular expression. It will match 
+     * @param {bool} regex if the old value is a regular expression. It will match
+     * @param {object} data in the recursion, passing the data attribute 
      * @returns undefined
      */
-    replace(o_v,n_v,regex=false){
-        let o = arguments[3] || this.data; // argument used for recursion
+    replace(o_v,n_v,regex=false,data){
+        let o = data || this.data; // argument used for recursion
         let myregexTest;
         if (regex){
             myregexTest = new RegExp(o_v)
@@ -445,7 +468,13 @@ class Som{
                         }
                     }
                     else{
-                        this.replace(o_v,n_v,regex,o[k])
+                        if(o[k] != undefined && typeof o[k]!= "undefined"){/* ensuring no undefined is being sent */
+                            this.replace(o_v,n_v,regex,o[k])
+                        }
+                        else{
+                            return undefined
+                        }
+                        
                     }
                 }
             }
