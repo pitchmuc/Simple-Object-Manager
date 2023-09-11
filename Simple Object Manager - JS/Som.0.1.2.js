@@ -109,7 +109,7 @@ class Som{
                         v = v[tmp_pathSplit[i]];
                     }
                 }
-                if (v === "" || (typeof v === 'undefined' & fallback == "")){
+                if (v === "" || (typeof v === 'undefined' && fallback == "")){
                     results[path]['value'] = ""
                 }
                 results[path]['value'] = v
@@ -119,7 +119,12 @@ class Som{
         for (let res in results) {
             result = result || results[res]['value'] 
         }
-        return result || fallback || this.defaultvalue || undefined
+        if((typeof result == "undefined" && fallback == "") || result ==""){
+            return ""
+        }
+        else{
+            return result || fallback || this.defaultvalue || undefined
+        }   
     }
 
     /**
@@ -455,9 +460,20 @@ class Som{
                 else if (typeof o[k]=='object'){
                     if(Array.isArray(o[k])){
                         let t = this; /* save "this" */
+                        let flagSArray = false; /*flag for simple array*/
+                        if(o[k].length>0){
+                            flagSArray = typeof o[k][0] == 'string' || typeof o[k][0] == 'number'?true:false;
+                        }
                         let i = o[k].indexOf(o_v) /* if simple array of values */
                         if(i!=-1){
                             o[k][i] = n_v;
+                        }
+                        if(regex && flagSArray){
+                            for(i=0;i<o[k].length;i++){
+                                if(myregexTest.test(o[k][i])){
+                                    o[k][i] = n_v;
+                                }
+                            }
                         }
                         else{
                             o[k].forEach(function(el){
