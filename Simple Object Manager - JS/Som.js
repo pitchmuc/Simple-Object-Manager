@@ -3,12 +3,19 @@ class Som{
     /**
      * 
      * @param {object} object object that will be copy
-     * @param {string} df default value used in the get method
-     * @param {boolean} deepcopy boolean, if the object copied is deepcopied or not (default: true)
-     */
-    constructor(object,df=undefined,deepcopy=true) {
+     * @param {object} options object containing different options capability
+     * @param {string} options.dv default value used in the get method
+     * @param {boolean} options.deepcopy boolean, if the object copied is deepcopied or not (default: true)
+     * @param {boolean} options.stack if set to true, a stack attribute is filled with the operation done
+     * @param {function|object} options.context If you want to pass a context to your stack
+    */
+    constructor(object,options={dv:undefined,deepcopy:true,stack:false,context:undefined}) {
         this.data = {};
-        this.defaultvalue = df;
+        this.defaultvalue = typeof arguments[1]=='string'?arguments[1]:options.dv; /* legacy backward compatibility with df parameter*/
+        if(options.stack){
+           this.stack = [];
+           this.options = {"context":options.context}
+        }
         function getCircularReplacer(){
             const seen = new WeakSet();
             return (key, value) => {
@@ -25,7 +32,7 @@ class Som{
             if(Array.isArray(object) && object.length > 0){
                 let reference = this.data;
                 object.forEach(function(element){
-                    if(deepcopy){
+                    if(options.deepcopy){
                         try{
                             reference = Object.assign(reference,JSON.parse(JSON.stringify(element)));
                         }
@@ -43,8 +50,8 @@ class Som{
             }
             else{
                 try{
-                    if(deepcopy){
-                        this.data = Object.assign({},JSON.parse(JSON.stringify(object)));
+                    if(options.deepcopy && arguments[2] !== false){ //arguments[2] is legacy backward compatibility
+                        this.data = JSON.parse(JSON.stringify(object));
                     }else{
                         this.data = object;
                     }
@@ -71,9 +78,17 @@ class Som{
      *  
      * @param {string|array} path can be empty to return the whole object or a specific path such as "tenant.firstname" or an array of path. The first one returning a value is used.
      * @param {string|object} fallback if the field is not found in the Som, can provide a fallback value to be returned.
-     * @returns {object|string} 
+     * @param {string} origin default is undefined, "internal" for internal method used
+     * @returns {object|string}
      */
-    get(path,fallback){
+    get(path,fallback,origin){
+        if(this.stack && Array.isArray(this.stack) && origin != 'internal'){
+            let data = {'method':'get','path' : path}
+            if(this.options.context != undefined){ /* if something has been provided in the context options */
+                data['context'] = typeof this.options.context == "function"?this.options.context():this.options.context;
+            }
+            this.stack.push(data)
+        }
         if(typeof(path) == "undefined" || path == ""){
             return this.data
         }
@@ -133,10 +148,18 @@ class Som{
      * @param {string} path to assign to
      * @param {object|string} v value to assign
      * @param {object|string|undefined} fallback fallback value when value specified in "v" is undefined. Default : undefined
+     * @param {string} origin default is undefined, "internal" for internal method used
      */
-    assign(path, v,fallback=undefined){
+    assign(path, v,fallback=undefined,origin){
+        if(this.stack && Array.isArray(this.stack) && origin !='internal' && origin != 'override'){
+            let data = {"method":"assign","path" : path}
+            if(this.options.context != undefined){ /* if something has been provided in the context options */
+                data['context'] = typeof this.options.context == "function"?this.options.context():this.options.context;
+            }
+            this.stack.push(data)
+        }
         if (typeof v == "undefined"){
-            v = fallback
+            v = fallback || this.defaultvalue
         }
         let override = (arguments[3]=='override')?true:false;
         if(typeof path != "undefined" && path != "" && typeof path == "string"){
@@ -223,6 +246,13 @@ class Som{
      * 
      */
     merge(path,object){
+        if(this.stack && Array.isArray(this.stack) && origin !='internal'){
+            let data = {'method':'merge','path' : path}
+            if(this.options.context != undefined){ /* if something has been provided in the context options */
+                data['context'] = typeof this.options.context == "function"?this.options.context():this.options.context;
+            }
+            this.stack.push(data)
+        }
         if(typeof path == "object" && typeof object == "undefined"){
             object = path;
             path = undefined;
@@ -267,12 +297,12 @@ class Som{
                 }
                 else{
                     var newv = Object.assign(v,JSON.parse(JSON.stringify(object)));
-                    this.data = this.assign(path,newv)
+                    this.data = this.assign(path,newv,undefined,'internal')
                 }
                 return this.data
             }
             else{
-                this.assign(path,object)
+                this.assign(path,object,undefined,'internal')
                 return this.data
             }
         }
@@ -287,6 +317,13 @@ class Som{
      * @param {boolean} key
      */
     remove(path,key){
+        if(this.stack && Array.isArray(this.stack) && origin !='internal'){
+            let data = {'method':'remove','path' : path}
+            if(this.options.context != undefined){ /* if something has been provided in the context options */
+                data['context'] = typeof this.options.context == "function"?this.options.context():this.options.context;
+            }
+            this.stack.push(data)
+        }
         if (typeof key == "undefined"){
             key = false;
         }
@@ -347,6 +384,13 @@ class Som{
      * @returns return the whole data with that new elements.
      */
     push(path, v,o=false){
+        if(this.stack && Array.isArray(this.stack) && origin !='internal'){
+            let data = {'method':'push','path' : path}
+            if(this.options.context != undefined){ /* if something has been provided in the context options */
+                data['context'] = typeof this.options.context == "function"?this.options.context():this.options.context;
+            }
+            this.stack.push(data)
+        }
         if (path == "" || typeof path === "undefined"){ /*transforming the object to an array*/
             this.data = [this.data];
             this.data.push(v)
@@ -363,7 +407,7 @@ class Som{
             else if(typeof(c_r)=='object' || typeof(c_r)=="string"){
                 if(o == false){ /* if the user want to keep the original v */
                     let n_v = [c_r,v]
-                    this.assign(path,n_v)
+                    this.assign(path,n_v,undefined,'internal')
                 }
             }
         }
@@ -371,21 +415,28 @@ class Som{
     }
 
     /**
-     * @param {string} p path to the element you want to merge
+     * @param {string} path path to the element you want to merge
      * @param {object} o the object to deep merge with the current Som object.
      * @param {object} s source to merge data
+     * @param {string} origin origin of the call, used for internal calls
      * It doesn't return anything and replace the current Som object.
      */
-    mergeDeep(p,o,s){
-
-        if(typeof p === "string"){ /* if path is provided */
+    mergeDeep(path,o,s,origin){
+        if(this.stack && Array.isArray(this.stack) && origin !='internal'){
+            let data = {'method':'mergeDeep','path' : path}
+            if(this.options.context != undefined){ /* if something has been provided in the context options */
+                data['context'] = typeof this.options.context == "function"?this.options.context():this.options.context;
+            }
+            this.stack.push(data)
+        }
+        if(typeof path === "string"){ /* if path is provided */
             o = o;
-            s = s || this.get(p);
+            s = s || this.get(path,undefined,'internal');
 
         }
-        else if(typeof p =="object"){/* if path is not provided and an object is provided*/
+        else if(typeof path =="object"){/* if path is not provided and an object is provided*/
             s = o || this.data;
-            o = p;
+            o = path;
         }
         if (typeof o !== 'object'){
             throw new Error('expect an object as input')
@@ -400,7 +451,7 @@ class Som{
                     mNO[key] = o[key]
                 }
                 else if(Array.isArray(o[key]) === false && Array.isArray(mNO[key]) === false){
-                    this.mergeDeep(o[key],mNO[key])
+                    this.mergeDeep(o[key],mNO[key],mNO[key],'internal')
                 }
                 else if(Array.isArray(o[key]) && Array.isArray(mNO[key])){
                     for(let i=0;i<Math.max(o[key].length,mNO[key].length);i++){
@@ -417,7 +468,7 @@ class Som{
                                 }
                             }
                             else{
-                                this.mergeDeep(o[key][i],mNO[key][i])
+                                this.mergeDeep(o[key][i],mNO[key][i],mNO[key][i],'internal')
                             }
                             
                         }
@@ -435,9 +486,17 @@ class Som{
      * @param {string|undefined} n_v new value to be set
      * @param {bool} regex if the old value is a regular expression. It will match
      * @param {object} data in the recursion, passing the data attribute 
+     * @param {string} origin if the method is used recursively
      * @returns undefined
      */
-    replace(o_v,n_v,regex=false,data){
+    replace(o_v,n_v,regex=false,data,origin){
+        if(this.stack && Array.isArray(this.stack) && origin !='internal'){
+            let data = {'method':'replace','path' : path}
+            if(this.options.context != undefined){ /* if something has been provided in the context options */
+                data['context'] = typeof this.options.context == "function"?this.options.context():this.options.context;
+            }
+            this.stack.push(data)
+        }
         let o = data || this.data; // argument used for recursion
         let myregexTest;
         if (regex){
@@ -478,14 +537,14 @@ class Som{
                         else{
                             o[k].forEach(function(el){
                                 if(typeof el == "object"){/* ensuring only object can enter recursion */
-                                    t.replace(o_v,n_v,regex,el)
+                                    t.replace(o_v,n_v,regex,el,'internal')
                                 }
                         })
                         }
                     }
                     else{
-                        if(o[k] != undefined && typeof o[k]!= "undefined"){/* ensuring no undefined is being sent */
-                            this.replace(o_v,n_v,regex,o[k])
+                        if(o[k] != undefined && typeof o[k]!= "undefined" && !(o[k] instanceof Som)){/* ensuring no undefined is being sent */
+                            this.replace(o_v,n_v,regex,o[k],'internal')
                         }
                         else{
                             return undefined
@@ -499,7 +558,15 @@ class Som{
     }
 
     clear(){
+        if(this.stack && Array.isArray(this.stack)){
+            let data = {'method':'clear','path' : undefined}
+            if(this.options.context != undefined){ /* if something has been provided in the context options */
+                data['context'] = typeof this.options.context == "function"?this.options.context():this.options.context;
+            }
+            this.stack.push(data)
+        }
         this.data = {
         }
     }
 }
+module.exports = Som

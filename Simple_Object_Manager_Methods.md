@@ -38,7 +38,9 @@ som2 = new Som({'foo':'bar'})
 som3 = new Som(som1) /* Using the som1 as template - som1 could contains some attributes*/
 som4 = new Som([som1,som2]) /* merging different object together - following the order of the arguments */
 let myObj= {'foo':'bar'}
-som4 = new Som(myObj,undefined,false) /* copying the object but not deepcopying it as last argument is set to false */
+som4 = new Som(myObj,options={'dv':undefined,'deepcopy':false}) /* copying the object but not deepcopying it as last argument is set to false */
+som5 = new Som(myObj,options={'stack':true,'context':()=>{'myContext'}}) /* copying the object but not deepcopying it as last argument is set to false */
+
 ```
 
 The data located in the Som instance are accessible via a `.get()` method (see [Accessing data](./Simple_Object_Manager_Methods.md#Accessing_data]) part) or via the `data` attribute.\
