@@ -664,6 +664,74 @@ mysom.data;
 
 
 ```
+### Search
+
+The `som` instance provides a `search` method to search for path that are leading to a value.\
+The use-case is to look for the type of path that are leading to similar values.
+
+It takes 2 parameters:
+* value : string : What you are looking for
+* regex : boolean : If you want to apply regex on your value search (default `false`)
+
+It returns an object with the key being the value string you search.
+
+Example:
+
+```JS
+myObject = {
+    "data": {
+        "foo1": {
+            "string": "mystring",
+            "string2": "mystring2"
+        },
+        "foo2": {
+            "number": 0
+        },
+        "myarray": [
+            0,
+            1
+        ],
+        "myarrayObject": [
+            {
+                "foo1": "myString",
+                "foo2": "myString2"
+            }
+        ]
+    }
+};
+mySom = new Som(myObject);
+mySom.search('mystring') // will return {'mystring':['data.foo1.string']}
+mySom.search('ing[0-2]',true) // will return {'ing[0-2]':["data.foo1.string2","data.myarrayObject.0.foo2"]}
+mySom.search('^[0-2]$',true) // will return {'^[0-2]$': ["data.foo2.number","data.myarray.0","data.myarray.1"]}
+
+```
+
+### subSom
+
+If you want to create another `Som` instance out of one node.\
+It only works if the path provided is returning an object.\
+If the path used is not defined, the `Som` instance will assign an empty object on that path and return a `Som` instance.\
+The returns object is **not** deepcopied. Hence modification of that `Som` instance will impact the main `Som` instance.
+
+Example:
+
+```JS
+data = {'mydata':{'level1':{'foo':'bar'}}}
+mySom = new Som(data)
+
+/*existing node*/
+mySom.get('mydata.level1') // will return {'foo':'bar'}
+mySubSom1 = mySom.subSom('mydata.level1')
+mySubSom1.assign('foo1','barr')
+mySom.get('mydata.level1') // will return {foo: 'bar', foo1: 'barr'}
+
+/*new node*/
+mySom.get('mydata.level2','nothing here') // will return 'nothing here'
+mySubSom2 = mySom.subSom('mydata.level2')
+mySubSom2.assign('key.nested','value') // will now return {"key": {"nested": "value"}}
+
+```
+
 
 ### Handling path error
 
