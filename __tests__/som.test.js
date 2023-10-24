@@ -1,5 +1,5 @@
 const assert = require("assert");
-const Som = require("../Simple Object Manager - JS/Som.js");
+const Som = require("../Simple Object Manager - JS/Som.0.1.4.js");
 
 describe('initialize SOM with empty object and simple assign',()=>{
     test('Manipulating Som from empty object', async () => {
@@ -134,6 +134,35 @@ describe('Merge tests values',()=>{
         assert(newSom.get('data.array1').length ==3,'possess now 3 values')
         newSom.mergeDeep('data',{'array1':[4,5,6]});
         assert(newSom.get('data.array1').length ==6,'possess now 6 values')
+    })
+})
+
+describe('subSom',()=> {
+    test('get a subSum and request value from it', async () => {
+        const dl = new Som({ page: { pageInfo: { id: 1}}});
+        expect(dl.subSom("page").get("pageInfo.id")).toBe(1)
+        expect(dl.subSom("not.exisiting").get("pageInfo.id")).toBe(undefined)
+        expect(dl.subSom("page.pageInfo.id")).toBe(undefined)
+    })
+})
+describe('getSubNodes',()=> {
+    test('get sub-Soms', async () => {
+        const dl = new Som({ page: { pageInfo: { id: 1}, category: { primaryCategory: "abc"}}});
+        const {pageInfo, category, attributes} = dl.getSubNodes("page")
+        expect(pageInfo.get("id")).toBe(1)
+        expect(category.get("primaryCategory")).toBe("abc")
+        expect(category.get("attributes")).toBe(undefined)
+    })
+    test('get sub-Soms path option', async () => {
+        const dl = new Som({ page: { pageInfo: { id: 1}}});
+        const {pageInfo} = dl.getSubNodes(["not.existing", "pag"])
+    })
+})
+describe('modify',()=> {
+    test('change an existing value with a function', async () => {
+        const dl = new Som({ page: { pageInfo: { id: 1, value: 3}}});
+        dl.modify("page.pageInfo.value", it => it + 1)
+        expect(dl.get("page.pageInfo.value")).toBe(4)
     })
 })
 
