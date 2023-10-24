@@ -663,6 +663,26 @@ class Som{
         }
     }
 
+    /**
+     *  convenience function to get several subSoms in a single call
+     *  @param path
+     *  @returns an object of sub-SOMs of every node within the access object
+     *  example: {pageInfo, category} = getSubNodes('page') // { pageInfo: SOM(page.pageInfo), category: SOM(page.category}, attributes: SOM{page.attributes}}
+     */
+    getSubNodes(path){
+        const sub = this.subSom(path)
+        return Object.fromEntries(Object.keys(sub.data).map(key => [key, sub.subSom(key)]))
+    }
+
+    /**
+     * convenience function to modify a node with a function based on its current value
+     * @param path
+     * @param modFct
+     */
+    modify(path, modFct){
+        this.assign(Array.isArray(path)?path[0]:path, modFct(this.get(path)))
+    }
+
     clear(){
         if(this.stack && Array.isArray(this.stack)){
             let data = {'method':'clear','path' : undefined}
@@ -675,3 +695,5 @@ class Som{
         }
     }
 }
+
+module.exports = Som
