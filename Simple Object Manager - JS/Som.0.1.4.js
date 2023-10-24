@@ -649,19 +649,19 @@ class Som{
      * @param {string} path path of the SOM to be returned 
      * @param {boolean} stack if you want to create a stack
      * @param {function} context if you want to pass a context callback function
-     * @returns a new instance of SOM, related to it
+     * @returns a new instance of SOM, related to it or undefined if value for path is not an object. if no value exists, set it to empty object!
      */
     subSom(path,stack,context){
         let data = this.get(path);
-        let dv = this.defaultvalue
+        if(data==this.defaultvalue){
+            data = {}
+            this.assign(path,data)
+        }
         if(typeof(data)=='object'){
-            return new this.constructor(data,{dv:dv,deepcopy:false,stack:stack,context:context})
+            return new this.constructor(data,{dv:this.defaultvalue,deepcopy:false,stack:stack,context:context})
         }
-        else if(data==this.defaultvalue){
-            this.assign(path,{})
-            return this.subSom(path,stack,context)
-        }
-    }
+        return undefined
+     }
 
     /**
      *  convenience function to get several subSoms in a single call

@@ -137,12 +137,25 @@ describe('Merge tests values',()=>{
     })
 })
 
+describe('subSom',()=> {
+    test('get a subSum and request value from it', async () => {
+        const dl = new Som({ page: { pageInfo: { id: 1}}});
+        expect(dl.subSom("page").get("pageInfo.id")).toBe(1)
+        expect(dl.subSom("not.exisiting").get("pageInfo.id")).toBe(undefined)
+        expect(dl.subSom("page.pageInfo.id")).toBe(undefined)
+    })
+})
 describe('getSubNodes',()=> {
     test('get sub-Soms', async () => {
         const dl = new Som({ page: { pageInfo: { id: 1}, category: { primaryCategory: "abc"}}});
         const {pageInfo, category, attributes} = dl.getSubNodes("page")
         expect(pageInfo.get("id")).toBe(1)
         expect(category.get("primaryCategory")).toBe("abc")
+        expect(category.get("attributes")).toBe(undefined)
+    })
+    test('get sub-Soms path option', async () => {
+        const dl = new Som({ page: { pageInfo: { id: 1}}});
+        const {pageInfo} = dl.getSubNodes(["not.existing", "pag"])
     })
 })
 describe('modify',()=> {
