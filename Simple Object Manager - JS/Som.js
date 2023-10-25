@@ -11,6 +11,7 @@ class Som{
     */
     constructor(object,options={dv:undefined,deepcopy:true,stack:false,context:undefined}) {
         this.data = {};
+        this.deepcopy = options.deepcopy==undefined?true:options.deepcopy;
         this.defaultvalue = typeof arguments[1]=='string'?arguments[1]:options.dv; /* legacy backward compatibility with df parameter*/
         if(options.stack){
            this.stack = [];
@@ -32,15 +33,14 @@ class Som{
             if(Array.isArray(object) && object.length > 0){
                 let reference = this.data;
                 object.forEach(function(element){
-                    if(options.deepcopy){
+                    if(this.deepcopy){
                         try{
                             reference = Object.assign(reference,JSON.parse(JSON.stringify(element)));
                         }
                         catch(e){
                             console.warn('issue assigning object, trying removing circular references.');
                             reference = Object.assign(reference,JSON.parse(JSON.stringify(element,getCircularReplacer())));
-                        }
-                        
+                        }    
                     }
                     else{
                         reference = Object.assign(reference,element)
@@ -50,7 +50,7 @@ class Som{
             }
             else{
                 try{
-                    if(options.deepcopy && arguments[2] !== false){ //arguments[2] is legacy backward compatibility
+                    if(this.deepcopy && (arguments[2] !=false)){ //arguments[2] is legacy backward compatibility
                         this.data = JSON.parse(JSON.stringify(object));
                     }else{
                         this.data = object;
@@ -64,7 +64,12 @@ class Som{
         }
         else if (typeof(object) == 'object' && (object instanceof Som) == true){
             try{
-                this.data = Object.assign({},JSON.parse(JSON.stringify(object.data)));
+                if(this.deepcopy){
+                    this.data = Object.assign({},JSON.parse(JSON.stringify(object.data)));
+                }else{
+                    this.data = object.data
+                }
+                
             }
             catch(e){
                 console.warn('issue assigning object, trying removing circular references.');
@@ -557,6 +562,127 @@ class Som{
         return undefined
     }
 
+    /**
+     * 
+     * @param {string} value value to be search in the Som data
+     * @param {bool} regex if a regex is to be used
+     * @param {object} data the object used in the recursion
+     * @param {array} paths the array containing the paths found
+     * @param {string} curr_path the current path built
+     * @returns an object with the list of paths that contains that value
+     */
+    search(value,regex=false,data,paths=undefined,curr_path=undefined,origin){
+        if(this.stack && Array.isArray(this.stack) && origin !='internal'){
+            let data = {'method':'search','path' : '','value':value}
+            if(this.options.context != undefined){ /* if something has been provided in the context options */
+                data['context'] = typeof this.options.context == "function"?this.options.context():this.options.context;
+            }
+            this.stack.push(data)
+        }
+        let o = data || this.data; // argument used for recursion
+        let cp = curr_path == undefined?"":curr_path;
+        let ps = paths==undefined?[]:paths;
+        let myregexTest;
+        if (regex){
+            myregexTest = new RegExp(value)
+        }
+        if(typeof o =='object'){
+            for(let k in o){
+                if(typeof o[k]!= 'object'){
+                    if(regex){
+                        if(myregexTest.test(o[k])){
+                            let tmp_cp = cp==""?k:cp+'.'+k;
+                            ps.push(tmp_cp)
+                        }
+                    }
+                    else{
+                        if(o[k]==value){
+                            let tmp_cp = cp ==""?k:cp+'.'+k;
+                            ps.push(tmp_cp)
+                        }
+                    }
+                }
+                else if(Array.isArray(o[k])){
+                    let flagSArray = false; /*flag for simple array*/
+                        if(o[k].length>0){
+                            flagSArray = typeof o[k][0] == 'string' || typeof o[k][0] == 'number'?true:false;
+                        }
+                    if(flagSArray){
+                        for(let i=0;i<o[k].length;i++){
+                            if(regex){
+                                if(myregexTest.test(o[k][i])){
+                                    let tmp_cp = cp==""?k:cp+'.'+k+'.'+i;
+                                    ps.push(tmp_cp)
+                                }
+                            }
+                            else{
+                                if(o[k][i] == value){
+                                    let tmp_cp = cp==""?k:cp+'.'+k+'.'+i;
+                                    ps.push(tmp_cp)
+                                }
+                            }
+                        }
+                    }
+                    else{ // if array of objects
+                        for(let i=0;i<o[k].length;i++){
+                            if(typeof o[k][i] == "object"){/* ensuring only object can enter recursion */
+                                let tmp_cp = cp==""?k+'.'+i:cp+'.'+k+'.'+i;
+                                this.search(value,regex,o[k][i],ps,tmp_cp,'internal')
+                            }
+                        }
+                    }
+                }
+                else if(typeof o[k] == 'object'){
+                    let tmp_cp = cp==""?k:cp+'.'+k;
+                    this.search(value,regex,o[k],ps,tmp_cp,'internal')
+                }
+            }
+        }
+        data = {}
+        data[value] = ps
+        return data
+
+    }
+
+    /**
+     * 
+     * @param {string} path path of the SOM to be returned 
+     * @param {boolean} stack if you want to create a stack
+     * @param {function} context if you want to pass a context callback function
+     * @returns a new instance of SOM, related to it or undefined if value for path is not an object. if no value exists, set it to empty object!
+     */
+    subSom(path,stack,context){
+        let data = this.get(path);
+        if(data==this.defaultvalue){
+            data = {}
+            this.assign(path,data)
+        }
+        if(typeof(data)=='object'){
+            return new this.constructor(data,{dv:this.defaultvalue,deepcopy:false,stack:stack,context:context})
+        }
+        return undefined
+     }
+
+    /**
+     *  convenience function to get several subSoms in a single call
+     *  @param path path to the main object
+     *  @returns an object of sub-SOMs of every node within the access object
+     *  example: {pageInfo, category} = getSubNodes('page') // { pageInfo: SOM(page.pageInfo), category: SOM(page.category}, attributes: SOM{page.attributes}}
+     */
+    getSubNodes(path){
+        const sub = this.subSom(path)
+        return Object.fromEntries(Object.keys(sub.data).map(key => [key, sub.subSom(key)]))
+    }
+
+    /**
+     * convenience function to modify a node with a function based on its current value
+     * @param path path to use.
+     * @param modFct function that is apply on the node. It passes the value as a parameter.
+     */
+    modify(path, modFct){
+        this.assign(Array.isArray(path)?path[0]:path, modFct(this.get(path)))
+    }
+
     clear(){
         if(this.stack && Array.isArray(this.stack)){
             let data = {'method':'clear','path' : undefined}
@@ -569,4 +695,5 @@ class Som{
         }
     }
 }
+
 module.exports = Som

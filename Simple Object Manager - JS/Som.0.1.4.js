@@ -665,7 +665,7 @@ class Som{
 
     /**
      *  convenience function to get several subSoms in a single call
-     *  @param path
+     *  @param path path to the main object
      *  @returns an object of sub-SOMs of every node within the access object
      *  example: {pageInfo, category} = getSubNodes('page') // { pageInfo: SOM(page.pageInfo), category: SOM(page.category}, attributes: SOM{page.attributes}}
      */
@@ -676,8 +676,8 @@ class Som{
 
     /**
      * convenience function to modify a node with a function based on its current value
-     * @param path
-     * @param modFct
+     * @param path path to use.
+     * @param modFct function that is apply on the node. It passes the value as a parameter.
      */
     modify(path, modFct){
         this.assign(Array.isArray(path)?path[0]:path, modFct(this.get(path)))

@@ -6,7 +6,8 @@ This is keeping tracked of the release since version 0.1.0.
 # v 0.1.4
 
 * adding a `search` method
-* adding the `subSom` method to create a new som from a node of the SOM. 
+* adding the `subSom` method to create a new som from a node of the SOM.
+* adding the `getSubNodes`  method to return all existing sub nodes as SOM instance.
 
 # v 0.1.3
 
