@@ -664,13 +664,14 @@ mysom.data;
 
 
 ```
-### Search
+### SearchValue
 
-The `som` instance provides a `search` method to search for path that are leading to a value.\
+The `som` instance provides a `searchValue` method to search for paths that are leading to a set value.\
+It does not look for a node but for an end value being set in your object definition.\
 The use-case is to look for the type of path that are leading to similar values.
 
 It takes 2 parameters:
-* value : string : What you are looking for
+* value : string : value you are looking for at the end of your path.
 * regex : boolean : If you want to apply regex on your value search (default `false`)
 
 It returns an object with the key being the value string you search.
@@ -700,9 +701,9 @@ myObject = {
     }
 };
 mySom = new Som(myObject);
-mySom.search('mystring') // will return {'mystring':['data.foo1.string']}
-mySom.search('ing[0-2]',true) // will return {'ing[0-2]':["data.foo1.string2","data.myarrayObject.0.foo2"]}
-mySom.search('^[0-2]$',true) // will return {'^[0-2]$': ["data.foo2.number","data.myarray.0","data.myarray.1"]}
+mySom.searchValue('mystring') // will return {'mystring':['data.foo1.string']}
+mySom.searchValue('ing[0-2]',true) // will return {'ing[0-2]':["data.foo1.string2","data.myarrayObject.0.foo2"]}
+mySom.searchValue('^[0-2]$',true) // will return {'^[0-2]$': ["data.foo2.number","data.myarray.0","data.myarray.1"]}
 
 ```
 
@@ -712,6 +713,11 @@ If you want to create another `Som` instance out of one node.\
 It only works if the path provided is returning an object.\
 If the path used is not defined, the `Som` instance will assign an empty object on that path and return a `Som` instance.\
 The returns object is **not** deepcopied. Hence modification of that `Som` instance will impact the main `Som` instance.
+
+It takes 1 parameter:
+ * path : REQUIRED : The path where you want the object for the new SOM to be used.
+ Note that it will not create a sub SOM if the path does not return an object but string or integer. 
+ If the path does not return anything, it will create an object at that location. 
 
 Example:
 
@@ -730,6 +736,63 @@ mySom.get('mydata.level2','nothing here') // will return 'nothing here'
 mySubSom2 = mySom.subSom('mydata.level2')
 mySubSom2.assign('key.nested','value') // will now return {"key": {"nested": "value"}}
 
+```
+
+### Modify
+
+Som provides a `modify` method that takes a path or list of paths and a function as paremeter. \
+It then applies that function to the value returned by that path.\
+Note that you could end up using the default value if your path does not return anything.
+
+It takes 2 parameters:
+ * path : REQUIRED : The path where to apply that function
+ * function : REQUIRED : callback function where the value is passed as parameter 
+
+Example:
+
+```JS
+data = {'mydata':{'level1':{'foo':'bar','value':1}}}
+mySom = new Som(data)
+
+mySom.modify('mydata.level1.value',(value)=>value+1)
+mySom.get('mydata.level1.value') // will return 2
+
+mySom.modify('mydata.level1.value',(value)=>value+1)
+mySom.get('mydata.level1.value') // will return 3
+
+mySom.modify('mydata.level1.otherThing',(value)=>value==undefined?"too bad":2)
+mySom.get('mydata.level1.otherThing') // will return "too bad"
+```
+
+
+### getSubNodes
+
+The `getSubNodes` method permits to deconstruct an object so you can use `subSom` object to it.\
+In that sense, it can make working with some complex object easier.\
+It takes 1 parameter:
+* the path where to look for objects
+
+Example:
+
+```JS
+let myobject = {"mydata":{
+    "object1" : "foo",
+    "object2" : 0,
+    "object3" : {
+        "some" : "value"
+    },
+    "array1" : [1,"value2",3],
+    "array2" : [{
+        "foo" : "value1"
+    }]
+}}
+mySom = new Som(myobject);
+let {object1,object2,object3,array1,array2} = mySom.getSubNodes('mydata');
+object1 == undefined // true
+object2 == undefined // true
+object3.get("some") // returns "value"
+array1.get() // returns [1, 'value2', 3]
+array2.get() // returns {foo: 'value1'}
 ```
 
 

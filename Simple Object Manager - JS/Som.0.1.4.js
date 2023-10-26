@@ -32,20 +32,31 @@ class Som{
         if (typeof(object) == 'object' && (object instanceof Som) == false){
             if(Array.isArray(object) && object.length > 0){
                 let reference = this.data;
-                object.forEach(function(element){
-                    if(this.deepcopy){
-                        try{
-                            reference = Object.assign(reference,JSON.parse(JSON.stringify(element)));
+                if(typeof object[0] == "object"){
+                    let t = this
+                    object.forEach(function(element){
+                        if(t.deepcopy){
+                            try{
+                                reference = Object.assign(reference,JSON.parse(JSON.stringify(element)));
+                            }
+                            catch(e){
+                                console.warn('issue assigning object, trying removing circular references.');
+                                reference = Object.assign(reference,JSON.parse(JSON.stringify(element,getCircularReplacer())));
+                            }    
                         }
-                        catch(e){
-                            console.warn('issue assigning object, trying removing circular references.');
-                            reference = Object.assign(reference,JSON.parse(JSON.stringify(element,getCircularReplacer())));
-                        }    
+                        else{
+                            reference = Object.assign(reference,element)
+                        }
+                    })
+                }
+                else{
+                    if(this.deepcopy){
+                        this.data = JSON.parse(JSON.stringify(object))
                     }
                     else{
-                        reference = Object.assign(reference,element)
+                        this.data = object
                     }
-                })
+                }
 
             }
             else{
@@ -571,7 +582,7 @@ class Som{
      * @param {string} curr_path the current path built
      * @returns an object with the list of paths that contains that value
      */
-    search(value,regex=false,data,paths=undefined,curr_path=undefined,origin){
+    searchValue(value,regex=false,data,paths=undefined,curr_path=undefined,origin){
         if(this.stack && Array.isArray(this.stack) && origin !='internal'){
             let data = {'method':'search','path' : '','value':value}
             if(this.options.context != undefined){ /* if something has been provided in the context options */
@@ -627,14 +638,14 @@ class Som{
                         for(let i=0;i<o[k].length;i++){
                             if(typeof o[k][i] == "object"){/* ensuring only object can enter recursion */
                                 let tmp_cp = cp==""?k+'.'+i:cp+'.'+k+'.'+i;
-                                this.search(value,regex,o[k][i],ps,tmp_cp,'internal')
+                                this.searchValue(value,regex,o[k][i],ps,tmp_cp,'internal')
                             }
                         }
                     }
                 }
                 else if(typeof o[k] == 'object'){
                     let tmp_cp = cp==""?k:cp+'.'+k;
-                    this.search(value,regex,o[k],ps,tmp_cp,'internal')
+                    this.searchValue(value,regex,o[k],ps,tmp_cp,'internal')
                 }
             }
         }

@@ -166,6 +166,36 @@ describe('modify',()=> {
     })
 })
 
+describe('search tests',()=>{
+    test('Create a new SOM and a search values', async () => {
+        let newSom = new Som();
+        newSom.assign('data.object1','foo');
+        newSom.assign('data.object2','bar');
+        newSom.assign('data.object3','bar');
+        newSom.assign('data.array1.0','value1');
+        newSom.assign('data.array2.0.foo','value2');
+        results = newSom.searchValue('bar')
+        assert(results['bar'].length == 2 ,'Should be found in 2 instances');
+        assert(results['bar'].includes("data.object2") ,'This path should be found');
+        assert(results['bar'].includes("data.object3") ,'This path should be found');
+        results = newSom.searchValue('value1')
+        assert(results['value1'].includes("data.array1.0") ,'the array paths should be found');
+        results = newSom.searchValue('value2')
+        assert(results['value2'].includes("data.array2.0.foo") ,'the array paths should be found');
+    })
+})
+
+describe('clear test',()=> {
+    test('creating a som and using the clear method ', async () => {
+        let newSom = new Som();
+        newSom.assign('data.object1','foo');
+        newSom.assign('data.object2','bar');
+        newSom.clear()
+        assert(Object.entries(newSom.get()).length == 0,'should be empty object')
+        assert(newSom.get('data.object2')== undefined,'should be undefined')
+    })
+})
+
 /** To be done - create an object reference
 describe('loading object',()=>{
     test('using an object into SOM', async () => {

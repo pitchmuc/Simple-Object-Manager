@@ -1,6 +1,6 @@
 {
     "name": "SOM",
-    "version": "0.1.3",
+    "version": "0.1.4",
     "description": "Simple Object Manager",
     "main": "Simple Object Manager - JS/som.0.1.3.js",
     "scripts": {
