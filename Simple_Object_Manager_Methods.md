@@ -16,6 +16,10 @@ Once the 0.1.0 release version is live, the methods described here will be maint
     - [Replacing the values at scale](#replace)
     - [Removing fields](#removing-fields)
     - [Clear method](#clear)
+    - [SearchValue](#searchvalue)
+    - [subSom](#subsom)
+    - [Modify](#modify)
+    - [get Sub Nodes](#getsubnodes)
 - [Handling path error](#handling-path-error)
 
 ## Instantiation
