@@ -98,14 +98,14 @@ class Som{
      * @returns {object|string}
      */
     get(path,fallback,origin){
-        if(this.stack && Array.isArray(this.stack) && origin != 'internal'){
-            let data = {'method':'get','path' : path}
-            if(this.options.context != undefined){ /* if something has been provided in the context options */
-                data['context'] = typeof this.options.context == "function"?this.options.context():this.options.context;
-            }
-            this.stack.push(data)
-        }
         if(typeof(path) == "undefined" || path == ""){
+            if(this.stack && Array.isArray(this.stack) && origin != 'internal'){
+                let data = {'method':'get','path' : path}
+                if(this.options.context != undefined){ /* if something has been provided in the context options */
+                    data['context'] = typeof this.options.context == "function"?this.options.context({'method':'get','value':this.data}):this.options.context;
+                }
+                this.stack.push(data)
+            }
             return this.data
         }
         let paths = [];
@@ -151,10 +151,25 @@ class Som{
             result = result || results[res]['value'] 
         }
         if((typeof result == "undefined" && fallback == "") || result ==""){
+            if(this.stack && Array.isArray(this.stack) && origin != 'internal'){
+                let data = {'method':'get','path' : path}
+                if(this.options.context != undefined){ /* if something has been provided in the context options */
+                    data['context'] = typeof this.options.context == "function"?this.options.context({'method':'get','value':""}):this.options.context;
+                }
+                this.stack.push(data)
+            }
             return ""
         }
         else{
-            return result || fallback || this.defaultvalue || undefined
+            let finalResult = result || fallback || this.defaultvalue || undefined
+            if(this.stack && Array.isArray(this.stack) && origin != 'internal'){
+                let data = {'method':'get','path' : path}
+                if(this.options.context != undefined){ /* if something has been provided in the context options */
+                    data['context'] = typeof this.options.context == "function"?this.options.context({'method':'get','value':finalResult}):this.options.context;
+                }
+                this.stack.push(data)
+            }
+            return finalResult
         }   
     }
 
@@ -169,8 +184,9 @@ class Som{
     assign(path, v,fallback=undefined,origin){
         if(this.stack && Array.isArray(this.stack) && origin !='internal' && origin != 'override'){
             let data = {"method":"assign","path" : path}
+            data['method'] == origin == 'modify'?"modify":"assign";
             if(this.options.context != undefined){ /* if something has been provided in the context options */
-                data['context'] = typeof this.options.context == "function"?this.options.context():this.options.context;
+                data['context'] = typeof this.options.context == "function"?this.options.context({"method":"assign","value":v}):this.options.context;
             }
             this.stack.push(data)
         }
@@ -262,13 +278,6 @@ class Som{
      * 
      */
     merge(path,object){
-        if(this.stack && Array.isArray(this.stack) && origin !='internal'){
-            let data = {'method':'merge','path' : path}
-            if(this.options.context != undefined){ /* if something has been provided in the context options */
-                data['context'] = typeof this.options.context == "function"?this.options.context():this.options.context;
-            }
-            this.stack.push(data)
-        }
         if(typeof path == "object" && typeof object == "undefined"){
             object = path;
             path = undefined;
@@ -282,13 +291,20 @@ class Som{
             path = object;
             object = tmp_object
         }
+        if(this.stack && Array.isArray(this.stack)){
+            let data = {'method':'merge','path' : path}
+            if(this.options.context != undefined){ /* if something has been provided in the context options */
+                data['context'] = typeof this.options.context == "function"?this.options.context({"method":"merge","value":object}):this.options.context;
+            }
+            this.stack.push(data)
+        }
         if(typeof(path) == 'undefined' || path == ""){
             this.data = Object.assign(this.data,JSON.parse(JSON.stringify(object)));
             return this.data
         }
         else{
-            var pS = path.split(".");
-            var v = this.data;
+            let pS = path.split(".");
+            let v = this.data;
             for (var i = 0; i < pS.length && v != undefined; i++) { // Traverse until found or undefined
                 if (Array.isArray(v) && Math.abs(parseInt(pS[i]))<=v.length) { //If parent is array and path is in the index
                     if(parseInt(pS[i])<0){ /** Negative number */
@@ -336,7 +352,7 @@ class Som{
         if(this.stack && Array.isArray(this.stack) && origin !='internal'){
             let data = {'method':'remove','path' : path}
             if(this.options.context != undefined){ /* if something has been provided in the context options */
-                data['context'] = typeof this.options.context == "function"?this.options.context():this.options.context;
+                data['context'] = typeof this.options.context == "function"?this.options.context({"method":"remove","value":undefined}):this.options.context;
             }
             this.stack.push(data)
         }
@@ -403,7 +419,7 @@ class Som{
         if(this.stack && Array.isArray(this.stack) && origin !='internal'){
             let data = {'method':'push','path' : path}
             if(this.options.context != undefined){ /* if something has been provided in the context options */
-                data['context'] = typeof this.options.context == "function"?this.options.context():this.options.context;
+                data['context'] = typeof this.options.context == "function"?this.options.context({"method":"push","value":v}):this.options.context;
             }
             this.stack.push(data)
         }
@@ -438,13 +454,6 @@ class Som{
      * It doesn't return anything and replace the current Som object.
      */
     mergeDeep(path,o,s,origin){
-        if(this.stack && Array.isArray(this.stack) && origin !='internal'){
-            let data = {'method':'mergeDeep','path' : path}
-            if(this.options.context != undefined){ /* if something has been provided in the context options */
-                data['context'] = typeof this.options.context == "function"?this.options.context():this.options.context;
-            }
-            this.stack.push(data)
-        }
         if(typeof path === "string"){ /* if path is provided */
             o = o;
             s = s || this.get(path,undefined,'internal');
@@ -458,6 +467,13 @@ class Som{
             throw new Error('expect an object as input')
         }
         let mNO = s || this.data;
+        if(this.stack && Array.isArray(this.stack) && origin !='internal'){
+            let data = {'method':'mergeDeep','path' : path}
+            if(this.options.context != undefined){ /* if something has been provided in the context options */
+                data['context'] = typeof this.options.context == "function"?this.options.context({"method":"mergeDeep","value":o}):this.options.context;
+            }
+            this.stack.push(data)
+        }
         for (let key in o){
             if(typeof o[key] !== "object"){ /** Element is simple */
                 mNO[key] = o[key]
@@ -507,9 +523,9 @@ class Som{
      */
     replace(o_v,n_v,regex=false,data,origin){
         if(this.stack && Array.isArray(this.stack) && origin !='internal'){
-            let data = {'method':'replace','path' : path}
+            let data = {'method':'replace'}
             if(this.options.context != undefined){ /* if something has been provided in the context options */
-                data['context'] = typeof this.options.context == "function"?this.options.context():this.options.context;
+                data['context'] = typeof this.options.context == "function"?this.options.context({"method":"replace","value":o_v,"new_value":n_v}):this.options.context;
             }
             this.stack.push(data)
         }
@@ -577,20 +593,13 @@ class Som{
      * 
      * @param {string} value value to be search in the Som data
      * @param {bool} regex if a regex is to be used
-     * @param {object} data the object used in the recursion
+     * @param {object} d the object used in the recursion
      * @param {array} paths the array containing the paths found
      * @param {string} curr_path the current path built
      * @returns an object with the list of paths that contains that value
      */
-    searchValue(value,regex=false,data,paths=undefined,curr_path=undefined,origin){
-        if(this.stack && Array.isArray(this.stack) && origin !='internal'){
-            let data = {'method':'search','path' : '','value':value}
-            if(this.options.context != undefined){ /* if something has been provided in the context options */
-                data['context'] = typeof this.options.context == "function"?this.options.context():this.options.context;
-            }
-            this.stack.push(data)
-        }
-        let o = data || this.data; // argument used for recursion
+    searchValue(value,regex=false,d,paths=undefined,curr_path=undefined,origin){
+        let o = d || this.data; // argument used for recursion
         let cp = curr_path == undefined?"":curr_path;
         let ps = paths==undefined?[]:paths;
         let myregexTest;
@@ -649,10 +658,16 @@ class Som{
                 }
             }
         }
-        data = {}
-        data[value] = ps
-        return data
-
+        let dataResult = {}
+        dataResult[value] = ps
+        if(this.stack && Array.isArray(this.stack) && origin !='internal'){
+            let data = {'method':'searchValue','path':undefined,'value' : ''}
+            if(this.options.context != undefined){ /* if something has been provided in the context options */
+                data['context'] = typeof this.options.context == "function"?this.options.context({"method":"searchValue","value":dataResult}):this.options.context;
+            }
+            this.stack.push(data)
+        }
+        return dataResult
     }
 
     /**
@@ -662,14 +677,29 @@ class Som{
      * @param {function} context if you want to pass a context callback function
      * @returns a new instance of SOM, related to it or undefined if value for path is not an object. if no value exists, set it to empty object!
      */
-    subSom(path,stack,context){
-        let data = this.get(path);
+    subSom(path,stack,context,origin){
+        let data = this.get(path,this.defaultvalue,'internal');
         if(data==this.defaultvalue){
             data = {}
             this.assign(path,data)
         }
         if(typeof(data)=='object'){
-            return new this.constructor(data,{dv:this.defaultvalue,deepcopy:false,stack:stack,context:context})
+            const subSom = new this.constructor(data,{dv:this.defaultvalue,deepcopy:false,stack:stack,context:context})
+            if(this.stack && Array.isArray(this.stack) && origin != "internal"){
+                let data = {'method':'subSom','path' : path}
+                if(this.options.context != undefined){ /* if something has been provided in the context options */
+                    data['context'] = typeof this.options.context == "function"?this.options.context({"method":"subSom","value":subSom}):this.options.context;
+                }
+                this.stack.push(data)
+            }
+            return subSom
+        }
+        if(this.stack && Array.isArray(this.stack) && origin !='internal'){
+            let data = {'method':'subSom','path' : path,}
+            if(this.options.context != undefined){ /* if something has been provided in the context options */
+                data['context'] = typeof this.options.context == "function"?this.options.context({"method":"subSom","value":undefined}):this.options.context;
+            }
+            this.stack.push(data)
         }
         return undefined
      }
@@ -681,8 +711,16 @@ class Som{
      *  example: {pageInfo, category} = getSubNodes('page') // { pageInfo: SOM(page.pageInfo), category: SOM(page.category}, attributes: SOM{page.attributes}}
      */
     getSubNodes(path){
-        const sub = this.subSom(path)
-        return Object.fromEntries(Object.keys(sub.data).map(key => [key, sub.subSom(key)]))
+        const sub = this.subSom(path,false,undefined,'internal')
+        let results = Object.fromEntries(Object.keys(sub.data).map(key => [key, sub.subSom(key,false,undefined,'internal')]))
+        if(this.stack && Array.isArray(this.stack)){
+            let data = {'method':'getSubNodes','path' : path}
+            if(this.options.context != undefined){ /* if something has been provided in the context options */
+                data['context'] = typeof this.options.context == "function"?this.options.context({'method':'getSubNodes','value':results}):this.options.context;
+            }
+            this.stack.push(data)
+        }
+        return results
     }
 
     /**
@@ -691,14 +729,21 @@ class Som{
      * @param modFct function that is apply on the node. It passes the value as a parameter.
      */
     modify(path, modFct){
-        this.assign(Array.isArray(path)?path[0]:path, modFct(this.get(path)))
+        this.assign(Array.isArray(path)?path[0]:path, modFct(this.get(path,undefined,'modify')))
+        if(this.stack && Array.isArray(this.stack)){
+            let data = {'method':'modify','path' : path}
+            if(this.options.context != undefined){ /* if something has been provided in the context options */
+                data['context'] = typeof this.options.context == "function"?this.options.context({'method':'modify','value':modFct(this.get(path,undefined,'modify'))}):this.options.context;
+            }
+            this.stack.push(data)
+        }
     }
 
     clear(){
         if(this.stack && Array.isArray(this.stack)){
             let data = {'method':'clear','path' : undefined}
             if(this.options.context != undefined){ /* if something has been provided in the context options */
-                data['context'] = typeof this.options.context == "function"?this.options.context():this.options.context;
+                data['context'] = typeof this.options.context == "function"?this.options.context({'method':'clear','value':undefined}):this.options.context;
             }
             this.stack.push(data)
         }

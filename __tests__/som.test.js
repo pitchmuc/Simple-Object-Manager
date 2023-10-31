@@ -185,6 +185,65 @@ describe('search tests',()=>{
     })
 })
 
+describe('stack tests',()=>{
+    test('Create a new SOM with a stack activated ', async () => {
+        const myObject = {
+            "data":{
+                "object1":"foo",
+                "object2":"bar",
+                "array1" : ['value1'],
+                "array2" :[{
+                    "foo":"value2"
+                }]
+            }
+        }
+        const callback = function(o){
+            return {'value passed':o.value}
+        }
+        const newSom = new Som(myObject,{"stack":true,"context":callback});
+        newSom.assign('data.object3.example','value')
+        assert(newSom.stack.length == 1,"stack should contain only one element")
+        assert(newSom.stack[0]['context']['value passed'] == "value","value should be returned")
+        assert(newSom.stack[0]['method'] == "assign","assign should be returned")
+        newSom.get('data.array1.0')
+        assert(newSom.stack.length == 2,"stack should contain only 2 elements")
+        assert(newSom.stack[1].context['value passed'] == "value1","value1 should be returned")
+        assert(newSom.stack[1]['method'] == "get","get should be returned")
+        newSom.replace('value2','value1')
+        assert(newSom.stack.length == 3,"stack should contain only 3 elements")
+        assert(newSom.stack[2].context['value passed'] == "value2","value2 should be returned")
+        assert(newSom.stack[2]['method'] == "replace","replace should be returned")
+        results = newSom.searchValue('value1')
+        assert(results['value1'].length == 2 ,'Should be found in 2 instances');
+        assert(results['value1'].includes("data.array1.0") ,'This path should be found');
+        assert(results['value1'].includes("data.array2.0.foo") ,'This path should be found');
+        assert(newSom.stack.length == 4,"stack should contain only 4 elements")
+        assert(newSom.stack[3].context['value passed'] == results,"should give the results")
+        assert(newSom.stack[3].method == "searchValue","searchValue should be returned")
+        const newObject = {'data2':{'newField':'newValue'}}
+        newSom.merge(newObject);
+        assert(newSom.stack.length == 5,"stack should contain only 5 elements")
+        assert(newSom.stack[4].context['value passed'] == newObject,"should give the newObject")
+        assert(newSom.stack[4].method == "merge","merge should be returned")
+        const newMerge = {'newField2':'newValue2'}
+        newSom.mergeDeep('data2',newMerge);
+        assert(newSom.stack.length == 6,"stack should contain only 6 elements")
+        assert(newSom.stack[5].context['value passed'] == newMerge,"should give the newObject")
+        assert(newSom.stack[5].method == "mergeDeep","mergeDeep should be returned")
+        assert(newSom.stack[5].path == "data2","data2 path should be returned")
+        mySubSom = newSom.subSom('data2');
+        assert(newSom.stack.length == 7,"stack should contain only 7 elements")
+        assert(newSom.stack[6].context['value passed'] instanceof(Som),"should give instance of Som")
+        assert(newSom.stack[6].method == "subSom","subSom should be returned")
+        assert(newSom.stack[6].path == "data2","data2 path should be returned")
+        let {object1,array1} = newSom.getSubNodes('data');
+        assert(newSom.stack.length == 8,"stack should contain only 8 elements")
+        assert(typeof object1 == "undefined","should be undefined")
+        assert(array1 instanceof(Som),"should give instance of Som")
+        assert(newSom.stack[7].method == "getSubNodes","subSom should be returned")
+    })
+})
+
 describe('clear test',()=> {
     test('creating a som and using the clear method ', async () => {
         let newSom = new Som();
