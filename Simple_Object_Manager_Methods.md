@@ -21,6 +21,7 @@ Once the 0.1.0 release version is live, the methods described here will be maint
     - [Modify](#modify)
     - [get Sub Nodes](#getsubnodes)
 - [Handling path error](#handling-path-error)
+- [SOM Stack](#the-stack)
 
 ## Instantiation
 
@@ -43,7 +44,7 @@ som3 = new Som(som1) /* Using the som1 as template - som1 could contains some at
 som4 = new Som([som1,som2]) /* merging different object together - following the order of the arguments */
 let myObj= {'foo':'bar'}
 som4 = new Som(myObj,options={'dv':undefined,'deepcopy':false}) /* copying the object but not deepcopying it as last argument is set to false */
-som5 = new Som(myObj,options={'stack':true,'context':()=>{'myContext'}}) /* copying the object but not deepcopying it as last argument is set to false */
+som5 = new Som(myObj,options={'stack':true,'context':()=>{'myContext'}}) /* copying the object and instantiating a stack*/
 
 ```
 
@@ -805,6 +806,46 @@ array2.get() // returns {foo: 'value1'}
 The `som` instance should be robust enough so it doesn't break when a wrong path is used.\
 If a wrong path is used, the `get` method will return undefined or the fallback passed as 2nd parameter\
 If a wrong path is used, the `assign` method will create the new path for the element proposed.
+
+
+### The stack
+
+The Som object can instantiate a stack that will capture all methods used and the path used in these methods (if any path used).\
+It can also provide a callback function to be executed during these methods calls, and the callback function will provide a parameter that you can use.\
+
+Example: 
+
+```JS
+const myObj= {'foo':'bar'}
+let myContext = function(parameter){
+    return parameter
+} 
+const mySom = new Som(myObj,options={'stack':true,'context':myContext}) 
+
+mySom.get('foo')
+mySom.stack // will return [{'method':'get','path':'foo', context : {'method':'get','value':'bar'}}]
+
+```
+
+
+However, the type of object or value provided will depends on the method used.\
+Therefore, please find a table below that explains the type of value returned in the stack and the context
+
+| Method | stack | context | parameter provided in context | comment |
+| - | - | - | - | - | - |
+| get | supported | supported | `{'method':'get','value':'valueReturned'}` |  | 
+| assign | supported | supported | `{'method':'assign','value':'valueAssigned'}` |  | 
+| merge | supported | supported | `{'method':'merge','value':'objectPushed'}` |  | 
+| mergeDeep | supported | supported | `{'method':'mergeDeep','value':'objectPushed'}` |  |  
+| push | supported | supported | `{'method':'push','value':'valuePushed'}` |  |  
+| remove | supported | supported | `{'method':'remove','value':undefined}` |  |  
+| replace | supported | supported | `{'method':'replace','value':oldValueReplaced,'new_value':newValuePushed}` | an additional element is passed `new_value` that is the one replacing the old one. |  
+| getSubNodes | supported | supported | `{'method':'getSubNodes','value':resultsOfSubNodes}` | the different sub nodes are being returned in the `value` parameter |  
+| subSom | supported | supported | `{'method':'subSom','value':SubSom}` | SubSom Object is being returned |  
+| modify | supported | supported | `{'method':'modify','value':resultOfModify}` | The value that has been calculated by the modify function is returned |  
+| searchValue | supported | supported | `{'method':'searchValue','value':results}` | results of the search, that is an object that provides the results in an array such as: `{searchElement:[path1,path2]}` |  
+| clear | supported | supported | `{'method':'searchValue','value':undefined}` |  |  
+
 
 
 ## Launch extension compatible
