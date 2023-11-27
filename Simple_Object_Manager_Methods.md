@@ -832,7 +832,7 @@ However, the type of object or value provided will depends on the method used.\
 Therefore, please find a table below that explains the type of value returned in the stack and the context
 
 | Method | stack | context | parameter provided in context | comment |
-| - | - | - | - | - | - |
+| - | - | - | - | - |
 | get | supported | supported | `{'method':'get','value':'valueReturned'}` |  | 
 | assign | supported | supported | `{'method':'assign','value':'valueAssigned'}` |  | 
 | merge | supported | supported | `{'method':'merge','value':'objectPushed'}` |  | 
