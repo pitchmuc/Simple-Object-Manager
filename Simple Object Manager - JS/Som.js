@@ -199,7 +199,7 @@ class Som{
             /* define path and create it if required */
             var xom = this.data
             for (var i=0;i<pS.length && xom != undefined;i++){ // Traverse a create if necessary
-                if (typeof(pS[i]) == 'string' && isNaN(pS[i]) == true) { //If v is a string
+                if (pS[i][0] != "[" && pS[i][pS[i].length-1] != "]") { //If v is not an array allocation
                     if(Object(xom).hasOwnProperty(pS[i])){// if path present
                         if (i == pS.length -1){ // if it is the last element
                             if(Array.isArray(xom[pS[i]])){ // if it is an array
@@ -232,7 +232,7 @@ class Som{
                             }
                         }
                         else{
-                            if(isNaN(pS[i+1])){ /* next element is part of object */
+                            if(pS[i+1][0] != "[" && pS[i][pS[i+1].length-1] != "]"){ /* next element is part of object */
                                 xom[pS[i]] = {} /** create the path */
                             }
                             else{/* next element is part of an array */
@@ -242,16 +242,18 @@ class Som{
                         }
                     }
                 } 
-                else if (typeof(pS[i]) == 'string' && isNaN(pS[i]) == false) { //If v is a number
-                    if(Array.isArray(xom) && Math.abs(pS[i]) < xom.length){ /* Array contain enough elements */
+                else if (pS[i][0] == "[" && pS[i][pS[i].length-1] == "]" ) { //If v is an array assignment
+                    let arrayPosition = pS[i].slice(1,pS[i].length-1)
+                    console.log(arrayPosition)
+                    if(Array.isArray(xom) && Math.abs(arrayPosition) < xom.length){ /* Array contain enough elements */
                         if (i == pS.length -1){ /** last element */
-                            xom[pS[i]] = v
+                            xom[arrayPosition] = v
                         }
                         else{
-                            xom = xom[pS[i]]
+                            xom = xom[arrayPosition]
                         }
                     }
-                    else if(Array.isArray(xom) && pS[i] >= xom.length){ /* Array do not contain enough elements - creating one additional */
+                    else if(Array.isArray(xom) && arrayPosition >= xom.length){ /* Array do not contain enough elements - creating one additional */
                         if (i == pS.length -1){
                             xom.push(v);
                         }
