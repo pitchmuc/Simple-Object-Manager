@@ -127,10 +127,11 @@ via dot notation:
 
 
 
-The `som` object accepts the dot notation for path, even for arrays.
+The `som` object accepts the dot notation for path, and arrays needs to pass the index within the `[]`.
 In case, you want to assign only a specific key value to an array. You can directly do so:
+*note* : if you pass an array index that is greater than the amount of elements, SOM will automatically assign the element to the next available slot, not respecting your index.
 ```JS
-    som.assign('_tenant.myArray.1.firstname','julien')
+    som.assign('_tenant.myArray.[1].firstname','julien')
     /*
     This will result in adding this element:
     {
@@ -144,7 +145,7 @@ In case, you want to assign only a specific key value to an array. You can direc
 ```
 or passing an object
 ```JS
-    som.assign('_tenant.0',{'firstname':'julien'})
+    som.assign('_tenant.[0]',{'firstname':'julien'})
     /*
     This will result in adding this element:
     {
@@ -160,7 +161,7 @@ or passing an object
 As you may have understood, if the element of the array is not present, the `som` automatically push the element to a new element of your array.
 In case, you do not assign any value, the `som` will set an `undefined` value instead.
 ```JS
-    som.assign('_tenant.myArray.1.firstname',)
+    som.assign('_tenant.myArray.[1].firstname',)
     /*
     This will result in adding this element:
     {
