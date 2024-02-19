@@ -244,7 +244,6 @@ class Som{
                 } 
                 else if (pS[i][0] == "[" && pS[i][pS[i].length-1] == "]" ) { //If v is an array assignment
                     let arrayPosition = pS[i].slice(1,pS[i].length-1)
-                    console.log(arrayPosition)
                     if(Array.isArray(xom) && Math.abs(arrayPosition) < xom.length){ /* Array contain enough elements */
                         if (i == pS.length -1){ /** last element */
                             xom[arrayPosition] = v
