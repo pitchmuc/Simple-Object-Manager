@@ -1,5 +1,5 @@
 const assert = require("assert");
-const Som = require("../Simple Object Manager - JS/Som.js");
+const Som = require("../src/Som.js");
 
 describe('initialize SOM with empty object and simple assign',()=>{
     test('Manipulating Som from empty object', async () => {
@@ -231,7 +231,7 @@ describe('stack tests',()=>{
         const newMerge = {'newField2':'newValue2'}
         newSom.mergeDeep('data2',newMerge);
         assert(newSom.stack.length == 6,"stack should contain only 6 elements")
-        assert(newSom.stack[5].context['value passed'] == newMerge,"should give the newObject")
+        assert(JSON.stringify(newSom.stack[5].context['value passed']) == JSON.stringify(newMerge),"should give the newObject")
         assert(newSom.stack[5].method == "mergeDeep","mergeDeep should be returned")
         assert(newSom.stack[5].path == "data2","data2 path should be returned")
         mySubSom = newSom.subSom('data2');

@@ -457,18 +457,18 @@ class Som{
      */
     mergeDeep(path,o,s,origin){
         if(typeof path === "string"){ /* if path is provided */
-            o = o;
+            o = JSON.parse(JSON.stringify(o));
             s = s || this.get(path,undefined,'internal');
 
         }
         else if(typeof path =="object"){/* if path is not provided and an object is provided*/
             s = o || this.data;
-            o = path;
+            o = JSON.parse(JSON.stringify(path));
         }
         if (typeof o !== 'object'){
             throw new Error('expect an object as input')
         }
-        let mNO = s || this.data;
+        let mNO = s || this.data; // my new object
         if(this.stack && Array.isArray(this.stack) && origin !='internal'){
             let data = {'method':'mergeDeep','path' : path}
             if(this.options.context != undefined){ /* if something has been provided in the context options */
@@ -507,7 +507,7 @@ class Som{
                             
                         }
                     }
-                } 
+                }
             }
         }
         return undefined
