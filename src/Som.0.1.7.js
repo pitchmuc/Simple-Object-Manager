@@ -674,18 +674,28 @@ class Som{
     /**
      * 
      * @param {string} path path of the SOM to be returned 
+     * @param {boolean} dc if you want to create a deepcopy of node, so the change on that node will not be reflected on the main Som.
      * @param {boolean} stack if you want to create a stack
      * @param {function} context if you want to pass a context callback function
      * @returns a new instance of SOM, related to it or undefined if value for path is not an object. if no value exists, set it to empty object!
      */
-    subSom(path,stack,context,origin){
+    subSom(path,dc,stack,context,origin){
+        dc = dc?dc:false;
         let data = this.get(path,this.defaultvalue,'internal');
-        if(data==this.defaultvalue){
+        if(data==this.defaultvalue && dc==false){
             data = {}
-            this.assign(path,data)
+            if(Array.isArray(path)){
+                this.assign(path[0],data)
+            }
+            else{
+                this.assign(path,data)
+            }   
+        }
+        else if (data==this.defaultvalue && dc==true) {
+            data = {}
         }
         if(typeof(data)=='object'){
-            const subSom = new this.constructor(data,{dv:this.defaultvalue,deepcopy:false,stack:stack,context:context})
+            const subSom = new this.constructor(data,{dv:this.defaultvalue,deepcopy:dc,stack:stack,context:context})
             if(this.stack && Array.isArray(this.stack) && origin != "internal"){
                 let data = {'method':'subSom','path' : path}
                 if(this.options.context != undefined){ /* if something has been provided in the context options */
@@ -707,13 +717,15 @@ class Som{
 
     /**
      *  convenience function to get several subSoms in a single call
-     *  @param path path to the main object
+     *  @param {array|string}path path to the main object
+     *  @param {boolean} dc deepcopy, if you want to get deepcopy version of the subSoms. 
      *  @returns an object of sub-SOMs of every node within the access object
      *  example: {pageInfo, category} = getSubNodes('page') // { pageInfo: SOM(page.pageInfo), category: SOM(page.category}, attributes: SOM{page.attributes}}
      */
-    getSubNodes(path){
-        const sub = this.subSom(path,false,undefined,'internal')
-        let results = Object.fromEntries(Object.keys(sub.data).map(key => [key, sub.subSom(key,false,undefined,'internal')]))
+    getSubNodes(path,dc){
+        dc = dc?dc:false;
+        const sub = this.subSom(path,dc,false,undefined,'internal')
+        let results = Object.fromEntries(Object.keys(sub.data).map(key => [key, sub.subSom(key,dc,false,undefined,'internal')]))
         if(this.stack && Array.isArray(this.stack)){
             let data = {'method':'getSubNodes','path' : path}
             if(this.options.context != undefined){ /* if something has been provided in the context options */

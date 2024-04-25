@@ -142,10 +142,14 @@ describe('Merge tests values',()=>{
 
 describe('subSom',()=> {
     test('get a subSum and request value from it', async () => {
-        const dl = new Som({ page: { pageInfo: { id: 1}}});
-        expect(dl.subSom("page").get("pageInfo.id")).toBe(1)
-        expect(dl.subSom("not.exisiting").get("pageInfo.id")).toBe(undefined)
-        expect(dl.subSom("page.pageInfo.id")).toBe(undefined)
+        const dl1 = new Som({ page: { pageInfo: { id: 1}}});
+        expect(dl1.subSom("page").get("pageInfo.id")).toBe(1)
+        expect(dl1.subSom("not.exisiting").get("pageInfo.id")).toBe(undefined)
+        expect(dl1.subSom("page.pageInfo.id")).toBe(undefined)
+        const dl2 = dl1.subSom(['path1','path2'],true);
+        expect(dl1.get("path1")).toBe(undefined)
+        const dl3 = dl1.subSom(['path3','path4']);
+        assert(JSON.stringify(dl1.get("path3")) == "{}", "it should be empty object")
     })
 })
 describe('getSubNodes',()=> {

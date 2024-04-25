@@ -720,10 +720,11 @@ It only works if the path provided is returning an object.\
 If the path used is not defined, the `Som` instance will assign an empty object on that path and return a `Som` instance.\
 The returns object is **not** deepcopied. Hence modification of that `Som` instance will impact the main `Som` instance.
 
-It takes 1 parameter:
+It takes 2 parameters:
  * path : REQUIRED : The path where you want the object for the new SOM to be used.
  Note that it will not create a sub SOM if the path does not return an object but string or integer. 
  If the path does not return anything, it will create an object at that location. 
+* dc : OPTIONAL : deepcopy, boolean where you can pass true, if you want the subSom to not be sync with your original Som instance. Default: False.
 
 Example:
 
