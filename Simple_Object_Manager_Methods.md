@@ -745,6 +745,12 @@ mySubSom2.assign('key.nested','value') // will now return {"key": {"nested": "va
 
 ```
 
+**Expected behavior**: 
+If you are passing a path that is not existing, the `Som` instance will create that node and return that node as empty object.
+If you are passing an array of path, and none of the path is found, the first element of the array is used to create the node.
+
+If you are using the deepcopy option, setting it to `true`, and the node does not exist, the node is not created on your original Som instance.
+
 ### Modify
 
 Som provides a `modify` method that takes a path or list of paths and a function as paremeter. \
@@ -776,8 +782,9 @@ mySom.get('mydata.level1.otherThing') // will return "too bad"
 
 The `getSubNodes` method permits to deconstruct an object so you can use `subSom` object to it.\
 In that sense, it can make working with some complex object easier.\
-It takes 1 parameter:
+It takes 2 parameter:
 * the path where to look for objects
+* a boolean to indicate if you want a deepcopy of the node (default false)
 
 Example:
 
