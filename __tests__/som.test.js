@@ -262,6 +262,46 @@ describe('clear test',()=> {
     })
 })
 
+describe('merging unknown path',()=>{
+    test('creating som and merging with a path that does not exist',async()=>{
+        let newSom = new Som();
+        newSom.assign('data.a.value','bar');
+        newSom.assign('data.b.value','bbr');
+        assert(newSom.get('data.z.value') == undefined,'should be undefined');
+        assert(newSom.get('newpath') == undefined, "should be undefined")
+        newSom.merge({'data':{'z':{'value':'bzr'}}})
+        newSom.merge({'newpath':'value'})
+        assert(newSom.get('data.z.value') == 'bzr','should be undefined');
+        assert(newSom.get('newpath') == 'value', "should be undefined")
+    })
+})
+
+describe('merging arrays with function',()=>{
+    test('creating som and merging with a path that does not exist',async()=>{
+        let newSom = new Som();
+        newSom.assign('filters.[0]',()=>console.log('something'));
+        newSom.assign('filters.[1]',()=>console.log('else'));
+        assert(typeof newSom.get('filters.0') == "function",'should be a function');
+        assert(newSom.get('filters').length == 2,'should be 2');
+        newSom.merge('filters',()=>console.log('new'))
+        assert(newSom.get('filters').length == 3,'should be 3');
+        assert(typeof newSom.get('filters.2') == "function",'should be 3');
+    })
+})
+
+describe('deep merging arrays with function',()=>{
+    test('creating som and merging with a path that does not exist',async()=>{
+        let newSom = new Som()
+        newSom.assign("a", {filters:[()=>1, ()=>2]})
+        assert(typeof newSom.get('a.filters.1') == "function",'should be a function');
+        assert(newSom.get('a.filters').length == 2,'should be a function');
+        newSom.mergeDeep("a", {filters:[()=>3]})
+        assert(typeof newSom.get('a.filters.2') == "function",'should be a function');
+        assert(newSom.get('a.filters').length == 3,'should be a function');
+    })
+})
+
+
 /** To be done - create an object reference
 describe('loading object',()=>{
     test('using an object into SOM', async () => {

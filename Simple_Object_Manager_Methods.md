@@ -7,7 +7,7 @@ Once the 0.1.0 release version is live, the methods described here will be maint
 
 - [Instantiation](#Instantiation)
 - [Methods](#Methods)
-    - [Assigning value(s)](##assigning-values)
+    - [Assigning value(s)](#assigning-values)
     - [Merging objects](#merging-object)
         - [merge method](#merge)
         - [mergedeep method](#mergedeep)

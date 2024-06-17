@@ -37,11 +37,11 @@ class Som{
                     object.forEach(function(element){
                         if(t.deepcopy){
                             try{
-                                reference = Object.assign(reference,JSON.parse(JSON.stringify(element)));
+                                reference = Object.assign(reference,element);
                             }
                             catch(e){
                                 console.warn('issue assigning object, trying removing circular references.');
-                                reference = Object.assign(reference,JSON.parse(JSON.stringify(element,getCircularReplacer())));
+                                reference = Object.assign(reference,element,getCircularReplacer());
                             }    
                         }
                         else{
@@ -51,7 +51,7 @@ class Som{
                 }
                 else{
                     if(this.deepcopy){
-                        this.data = JSON.parse(JSON.stringify(object))
+                        this.data = Object.assign({}, object);
                     }
                     else{
                         this.data = object
@@ -62,21 +62,21 @@ class Som{
             else{
                 try{
                     if(this.deepcopy && (arguments[2] !=false)){ //arguments[2] is legacy backward compatibility
-                        this.data = JSON.parse(JSON.stringify(object));
+                        this.data = Object.assign({}, object);
                     }else{
                         this.data = object;
                     }
                 }
                 catch(e){
                     console.warn('issue assigning object, trying removing circular references.');
-                    this.data = Object.assign({},JSON.parse(JSON.stringify(object,getCircularReplacer())));
+                    this.data = Object.assign({},object,getCircularReplacer());
                 }
             }
         }
         else if (typeof(object) == 'object' && (object instanceof Som) == true){
             try{
                 if(this.deepcopy){
-                    this.data = Object.assign({},JSON.parse(JSON.stringify(object.data)));
+                    this.data = Object.assign({},object.data);
                 }else{
                     this.data = object.data
                 }
@@ -84,7 +84,7 @@ class Som{
             }
             catch(e){
                 console.warn('issue assigning object, trying removing circular references.');
-                this.data = Object.assign({},JSON.parse(JSON.stringify(object.data,getCircularReplacer())));
+                this.data = Object.assign({},object.data,getCircularReplacer());
             }
             
         }
@@ -274,8 +274,8 @@ class Som{
     /** the merge method will take a path, and an existing object to merge it into that instance.
      * It returns the result merge data.
      * 
-     * @param {object} object the object to merge
      * @param {string} path where you want to merge the object
+     * @param {object} object the object to merge
      * 
      */
     merge(path,object){
@@ -299,14 +299,17 @@ class Som{
             }
             this.stack.push(data)
         }
+        console.log(path)
+        console.log(object)
         if(typeof(path) == 'undefined' || path == ""){
-            this.data = Object.assign(this.data,JSON.parse(JSON.stringify(object)));
+            this.data = Object.assign(this.data,object);
             return this.data
         }
         else{
             let pS = path.split(".");
             let v = this.data;
-            for (var i = 0; i < pS.length && v != undefined; i++) { // Traverse until found or undefined
+            for (var i = 0; i < pS.length && v != undefined; i++) { // Traverse until found or undefined, return the final value to modify
+                console.log(pS[i])
                 if (Array.isArray(v) && Math.abs(parseInt(pS[i]))<=v.length) { //If parent is array and path is in the index
                     if(parseInt(pS[i])<0){ /** Negative number */
                         v = v[v.length - Math.abs(parseInt(pS[i]))];
@@ -328,8 +331,11 @@ class Som{
                         v.push(element);
                     })
                 }
+                else if(Array.isArray(v)){
+                    v.push(object)
+                }
                 else{
-                    var newv = Object.assign(v,JSON.parse(JSON.stringify(object)));
+                    var newv = Object.assign(v,object);
                     this.data = this.assign(path,newv,undefined,'internal')
                 }
                 return this.data
@@ -456,13 +462,27 @@ class Som{
      */
     mergeDeep(path,o,s,origin){
         if(typeof path === "string"){ /* if path is provided */
-            o = JSON.parse(JSON.stringify(o));
+            if (Array.isArray(o)){
+                o = Array.from(o)
+            }
+            else{
+                o = Object.assign({}, o);
+            }
             s = s || this.get(path,undefined,'internal');
+            if (typeof s == "undefined"){// create the path if it does not exist
+                this.assign(path,{});
+                s = this.get(path,undefined,'internal')
+            }
 
         }
         else if(typeof path =="object"){/* if path is not provided and an object is provided*/
             s = o || this.data;
-            o = JSON.parse(JSON.stringify(path));
+            if (Array.isArray(o)){
+                o = Array.from(path)
+            }
+            else{
+                o = Object.assign({}, path);
+            }
         }
         if (typeof o !== 'object'){
             throw new Error('expect an object as input')
@@ -475,40 +495,60 @@ class Som{
             }
             this.stack.push(data)
         }
-        for (let key in o){
-            if(typeof o[key] !== "object"){ /** Element is simple */
-                mNO[key] = o[key]
-            }
-            else if(typeof o[key] === "object"){ /** Element is complex */
-                if(typeof mNO[key] !== "object"){ /** Original was not an object */
+        if (!Array.isArray(o)){
+            for (let key in o){
+                if(typeof o[key] !== "object"){ /** Element provided is simple */
                     mNO[key] = o[key]
                 }
-                else if(Array.isArray(o[key]) === false && Array.isArray(mNO[key]) === false){
-                    this.mergeDeep(o[key],mNO[key],mNO[key],'internal')
-                }
-                else if(Array.isArray(o[key]) && Array.isArray(mNO[key])){
-                    for(let i=0;i<Math.max(o[key].length,mNO[key].length);i++){
-                        if(o[key][i] === undefined){
-                            // nothing to be done here
-                        }
-                        else if(mNO[key][i]=== undefined) {
-                            mNO[key][i] = o[key][i]
-                        }
-                        else{
-                            if(typeof o[key][i] !== "object"){
-                                if(mNO[key].indexOf(o[key][i])== -1){
-                                    mNO[key].push(o[key][i])
-                                }
+                else if(typeof o[key] === "object"){ /** Element is complex */
+                    if(typeof mNO[key] !== "object"){ /** Original was not an object */
+                        mNO[key] = o[key]
+                    }
+                    else if(Array.isArray(o[key]) === false && Array.isArray(mNO[key]) === false){
+                        this.mergeDeep(o[key],mNO[key],mNO[key],'internal')
+                    }
+                    else if(Array.isArray(o[key]) && Array.isArray(mNO[key])){
+                        for(let i=0;i<Math.max(o[key].length,mNO[key].length);i++){
+                            if(o[key][i] === undefined){
+                                // nothing to be done here
+                            }
+                            else if(mNO[key][i]=== undefined) {
+                                mNO[key][i] = o[key][i]
                             }
                             else{
-                                this.mergeDeep(o[key][i],mNO[key][i],mNO[key][i],'internal')
+                                if(typeof o[key][i] !== "object"){
+                                    if(mNO[key].indexOf(o[key][i])== -1){
+                                        mNO[key].push(o[key][i])
+                                    }
+                                }
+                                else{
+                                    this.mergeDeep(o[key][i],mNO[key][i],mNO[key][i],'internal')
+                                }
+                                
                             }
-                            
                         }
+                    }
+                    else if(Array.isArray(o[key]) && !Array.isArray(mNO[key])){ //passed element is an array and original not an array
+                        /* we will override the original to be an array */
+                        mNO[key] = o[key]
+                    }
+                    else if(!Array.isArray(o[key]) && Array.isArray(mNO[key])){ //passed element is not an array and original is an array
+                        /* we will push the new object in the existing array */
+                        mNO[key].push(o[key])
                     }
                 }
             }
         }
+        else if (Array.isArray(o) && Array.isArray(mNO)){
+            for (let key in o){
+                if(typeof o[key] !== "object"){ /** Element provided is simple */
+                    mNO.push(o[key])
+                }
+                else if(typeof o[key] === "object"){ /** Element is complex */
+                    this.mergeDeep(o[key],mNO[key],mNO[key],'internal')
+                }
+            }
+            }
         return undefined
 
     }
