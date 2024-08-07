@@ -123,11 +123,8 @@ or array directly in the value:
     }
     */
 ```
-via dot notation:
 
-
-
-The `som` object accepts the dot notation for path, and arrays needs to pass the index within the `[]`.
+The `som` object accepts the dot notation for path, and arrays elements need to pass the index within brackets `[]`.
 In case, you want to assign only a specific key value to an array. You can directly do so:
 *note* : if you pass an array index that is greater than the amount of elements, SOM will automatically assign the element to the next available slot, not respecting your index.
 ```JS
@@ -158,7 +155,7 @@ or passing an object
     */
 ```
 
-As you may have understood, if the element of the array is not present, the `som` automatically push the element to a new element of your array.
+As you may have understood, if the element of the array is not present, the `som` automatically push the element in your array and increment its length.
 In case, you do not assign any value, the `som` will set an `undefined` value instead.
 ```JS
     som.assign('_tenant.myArray.[1].firstname',)
@@ -174,7 +171,22 @@ In case, you do not assign any value, the `som` will set an `undefined` value in
     }
     */
 ```
-see above how the element is on position 0, even though you pushed position 1, because no position 0 existed.
+see above how the element is set on position 0, even though you pushed position 1, because no position 0 existed.
+
+**Overriding value**
+If you have setup a value in a key (`string`,`number`,`undefined`), setting a structure with the key will create the new structure and make you loose your original value.\
+Be careful when manipulating the SOM object.\
+Example of behavior:
+
+```JS
+som = new Som({'a':'important value'})
+som.assign('a.b','fool')
+
+som.get('a') // will return {'b':'fool'}
+
+```
+
+The original `important value` has been overriden by the assignment.
 
 ### Merging object
 
