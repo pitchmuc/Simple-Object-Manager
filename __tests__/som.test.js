@@ -20,6 +20,24 @@ describe('initialize SOM with empty object and simple assign',()=>{
     })
 })
 
+describe('Override field with structure',()=>{
+    test('setting undefined and then structure', async () => {
+        let newSom = new Som({'a':undefined});
+        newSom.assign('a.b','foo')
+        assert(newSom.get('a.b') == 'foo','path should provide foo') 
+    })
+    test('setting value and then structure', async () => {
+        let newSom = new Som({'a':"value"});
+        newSom.assign('a.b','foo')
+        assert(newSom.get('a.b') == 'foo','path should provide foo') 
+    })
+    test('setting a number and then structure', async () => {
+        let newSom = new Som({'a':1});
+        newSom.assign('a.b','foo')
+        assert(newSom.get('a.b') == 'foo','path should provide foo') 
+    })
+})
+
 describe('assigning value to empty SOM',()=>{
     test('Assignment test', async () => {
         let newSom = new Som();

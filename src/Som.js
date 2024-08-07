@@ -198,7 +198,7 @@ class Som{
             var pS = path.split('.');
             /* define path and create it if required */
             var xom = this.data
-            for (var i=0;i<pS.length && xom != undefined;i++){ // Traverse a create if necessary
+            for (var i=0;i<pS.length && xom != undefined;i++){ // Traverse and create if necessary
                 if (pS[i][0] != "[" && pS[i][pS[i].length-1] != "]") { //If v is not an array allocation
                     if(Object(xom).hasOwnProperty(pS[i])){// if path present
                         if (i == pS.length -1){ // if it is the last element
@@ -215,8 +215,8 @@ class Som{
                             }
                             
                         }
-                        else{
-                            if(typeof xom[pS[i]] == 'string'){
+                        else{ // not the latest
+                            if(typeof xom[pS[i]] == 'string' || typeof xom[pS[i]] == 'undefined' || typeof xom[pS[i]] == 'number'){
                                 xom[pS[i]] = {}
                             }
                             xom = xom[pS[i]]
