@@ -11,6 +11,7 @@ class Som{
     */
     constructor(object,options={dv:undefined,deepcopy:true,stack:false,context:undefined}) {
         this.data = {};
+        this.version = "1.0.0";
         this.deepcopy = options.deepcopy==undefined?true:options.deepcopy;
         this.defaultvalue = typeof arguments[1]=='string'?arguments[1]:options.dv; /* legacy backward compatibility with df parameter*/
         if(options.stack){
