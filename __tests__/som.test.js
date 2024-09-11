@@ -20,6 +20,28 @@ describe('initialize SOM with empty object and simple assign',()=>{
     })
 })
 
+describe('Testing the GET capabilities', ()=>{
+    test('Simple Structure & simple Get',async()=>{
+        let newSom = new Som();
+        newSom.assign('my.object','foo');
+        newSom.assign('my.array',[1,2,3]);
+        newSom.assign('my.set',new Set(['1',2,'3']));
+        newSom.assign('my.number',2);
+        assert(typeof newSom.get('my') == 'object', 'Should be returning an object');
+        assert(newSom.get('my.object') == 'foo', 'Should be returning the foo value');
+        assert(newSom.get('my.number') == 2, 'Should be returning 2');
+        assert(newSom.get('my.set.3'), 'Should be returning true');
+        assert(newSom.get('my.array.2') == 3, 'Should be returning 3');
+    })
+    test('Simple Structure & complex Get',async()=>{
+        let newSom = new Som();
+        newSom.assign('my.array',[1,2,3]);
+        newSom.assign('my.set',new Set(['1',2,'3']));
+        expect(newSom.get('my.set.2')).toBe(true);
+        expect(newSom.get('my.array.2',undefined,{arraycheck:true})).toBe(true);
+    })
+})
+
 describe('Override field with structure',()=>{
     test('setting undefined and then structure', async () => {
         let newSom = new Som({'a':undefined});
@@ -35,6 +57,91 @@ describe('Override field with structure',()=>{
         let newSom = new Som({'a':1});
         newSom.assign('a.b','foo')
         assert(newSom.get('a.b') == 'foo','path should provide foo') 
+    })
+    test('using the override capability',async()=>{
+        let newSom = new Som({'a':1});
+        newSom.assign('a',2,undefined,{override:true})
+        assert(newSom.get('a') == 2,'value should be 2')
+    })
+})
+
+describe('Testing Set capability',()=>{
+    test('Setting a set',async()=>{
+        let newSom = new Som({'a':'b'})
+        mySet = new Set();
+        newSom.assign('mySet',mySet);
+        assert(typeof newSom.get('mySet') == 'object','it should have created an object')
+        assert(newSom.get('mySet') instanceof Set,'it should be an instance of Set')
+    })
+
+    test('Assigning to a set',async()=>{
+        let newSom = new Som({'a':'b'})
+        mySet = new Set();
+        newSom.assign('mySet',mySet);
+        newSom.assign('mySet','a')
+        assert(newSom.get('mySet').has('a'),'it should have a')
+        assert(!newSom.get('mySet').has('b'),'it should NOT have b')
+        assert(newSom.get('mySet').size == 1,'it should be of size 1')
+        newSom.assign('mySet','a');
+        assert(newSom.get('mySet').size == 1,'it should still be of size 1')
+        newSom.assign('mySet','b');
+        assert(newSom.get('mySet').size == 2,'it should be of size 2')
+        assert(newSom.get('mySet').has('b'),'it should have b')
+        newSom.push('mySet','b');
+        assert(newSom.get('mySet').size == 2,'it should be of size 2')
+        assert(newSom.get('mySet').has('b'),'it should have b')
+        assert(newSom.get('mySet.b'),'it should return true')
+        assert(!newSom.get('mySet.c'),'it should return !false')
+        newSom.push('mySet','c');
+        assert(newSom.get('mySet').size == 3,'it should be of size 3')
+        assert(newSom.get('mySet.c'),'it should return true')
+    })
+
+    test('Assigning to a set',async()=>{
+        let newSom = new Som({'a':'b'})
+        mySet = new Set();
+        newSom.assign('mySet',mySet);
+        newSom.assign('mySet','a')
+        assert(newSom.get('mySet').has('a'),'it should have a')
+        expect(newSom.get('mySet').has('b')).toBe(false)
+        assert(newSom.get('mySet').size == 1,'it should be of size 1')
+        newSom.assign('mySet','a')
+        assert(newSom.get('mySet').size == 1,'it should still be of size 1')
+        newSom.assign('mySet','b')
+        assert(newSom.get('mySet').size == 2,'it should be of size 2')
+        assert(newSom.get('mySet').has('b'),'it should have b')
+    })
+
+    test('getting from a set',async()=>{
+        let newSom = new Som()
+        newSom.assign('my.set',new Set(['key1']));
+        assert(newSom.get('my.set').size == 1,'it should been of size 1')
+        assert(newSom.get('my.set.key1'),'it should return true')
+        expect(newSom.get('my.set.key2')).toBe(false)
+    })
+
+    test('Testing type assignment capability',async()=>{
+        let newSom = new Som()
+        newSom.assign('my.array','key1');
+        assert(typeof newSom.get('my.array') === 'string','It should be a string');
+        newSom.assign('my.array','key1',undefined,{type:Array});
+        assert(newSom.get('my.array') instanceof Array,'It should be an Array');
+        assert(newSom.get('my.array').length == 2,'It should be of length 2');
+        newSom.assign('my.array','key1',undefined,{type:Set});
+        assert(newSom.get('my.array') instanceof Set,'It should be a Set');
+        assert(newSom.get('my.array').size == 1,'It should be of length 2');
+        newSom.assign('my.set',2);
+        assert(typeof newSom.get('my.set') === "number",'It should be a number');
+        newSom.assign('my.set',3,undefined,{type:Set});
+        assert(newSom.get('my.set') instanceof Set,'It should be a set');
+        assert(newSom.get('my.set').size == 2,'It should be of size 2');
+        newSom.assign('my.set',3,undefined,{type:Array});
+        assert(newSom.get('my.set') instanceof Array,'It should be an Array');
+        assert(newSom.get('my.set').length == 3,'It should be of size 3');
+        newSom.assign('my.set',1,undefined,{type:Set,override:true});
+        assert(newSom.get('my.set') instanceof Set,'It should be a set');
+        assert(newSom.get('my.set').size == 1,'It should be of size 1');
+        assert(newSom.get('my.set.1'),'It should be true');
     })
 })
 

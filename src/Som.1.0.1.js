@@ -11,7 +11,7 @@ class Som{
     */
     constructor(object,options={dv:undefined,deepcopy:true,stack:false,context:undefined}) {
         this.data = {};
-        this.version = "1.0.0";
+        this.version = "1.0.1";
         this.deepcopy = options.deepcopy==undefined?true:options.deepcopy;
         this.defaultvalue = typeof arguments[1]=='string'?arguments[1]:options.dv; /* legacy backward compatibility with df parameter*/
         if(options.stack){
@@ -95,10 +95,12 @@ class Som{
      *  
      * @param {string|array} path can be empty to return the whole object or a specific path such as "tenant.firstname" or an array of path. The first one returning a value is used.
      * @param {string|object} fallback if the field is not found in the Som, can provide a fallback value to be returned.
-     * @param {string} origin default is undefined, "internal" for internal method used
+     * @param {string} params object that can pass additional information : origin:used internally ("internal" for internal methods), arraycheck:false (if array are checked for existence of a value)
      * @returns {object|string}
      */
-    get(path,fallback,origin){
+    get(path,fallback,params={origin:undefined,arraycheck:false}){
+        let origin = params.origin
+        let arraycheck = params.arraycheck
         if(typeof(path) == "undefined" || path == ""){
             if(this.stack && Array.isArray(this.stack) && origin != 'internal'){
                 let data = {'method':'get','path' : path}
@@ -125,8 +127,23 @@ class Som{
                 results[path]['pathSplit'] = path.split(".");
                 let v = this.data;
                 let tmp_pathSplit = path.split(".");
-                for (var i = 0; i < tmp_pathSplit.length && v != undefined; i++) { // Traverse until found or undefined
-                    if (Array.isArray(v) && Math.abs(parseInt(tmp_pathSplit[i]))<=v.length) { //If parent is array and path is in the index
+                for (var i = 0; i < tmp_pathSplit.length && v != undefined; i++) { // Traverse until found or undefined   
+                    if (v instanceof Set){
+                        const tmp = v // keeping history of the set before overriding with true or false
+                        v = v.has(tmp_pathSplit[i])?true:false;
+                        if(v == false && !!parseInt(tmp_pathSplit[i])){ // handling set of numbers
+                            v = tmp.has(parseInt(tmp_pathSplit[i]))?true:false;
+                        } 
+                    }
+                    else if(Array.isArray(v[tmp_pathSplit[i]]) && i == tmp_pathSplit.length -2 && arraycheck){
+                        const tmp = v[tmp_pathSplit[i]] // keeping history of the set before overriding with true or false
+                        v = v[tmp_pathSplit[i]].includes(tmp_pathSplit[i+1])?true:false;
+                        if(v == false && !!parseInt(tmp_pathSplit[i+1])){ // handling array of numbers
+                            v = tmp.includes(parseInt(tmp_pathSplit[i+1]))?true:false;
+                        } 
+                        break; // Stopping the loop after finding the arraycheck
+                    }
+                    else if (Array.isArray(v) && Math.abs(parseInt(tmp_pathSplit[i]))<=v.length) { //If parent is array and path is in the index
                         if(parseInt(tmp_pathSplit[i])<0){ /** Negative number */
                             v = v[v.length - Math.abs(parseInt(tmp_pathSplit[i]))];
                         }
@@ -149,9 +166,9 @@ class Som{
             }
         let result = ""
         for (let res in results) {
-            result = result || results[res]['value'] 
+            result = result || results[res]['value']
         }
-        if((typeof result == "undefined" && fallback == "") || result ==""){
+        if((typeof result == "undefined" && fallback == "") || result === "" || result === false){
             if(this.stack && Array.isArray(this.stack) && origin != 'internal'){
                 let data = {'method':'get','path' : path}
                 if(this.options.context != undefined){ /* if something has been provided in the context options */
@@ -159,7 +176,7 @@ class Som{
                 }
                 this.stack.push(data)
             }
-            return ""
+            return result===false?result:''; /*handling false value and '' fallback that get overriden */
         }
         else{
             let finalResult = result || fallback || this.defaultvalue || undefined
@@ -180,9 +197,12 @@ class Som{
      * @param {string} path to assign to
      * @param {object|string} v value to assign
      * @param {object|string|undefined} fallback fallback value when value specified in "v" is undefined. Default : undefined
-     * @param {string} origin default is undefined, "internal" for internal method used
+     * @params {object} params object containing the possible elements: origin (used for internal passing), type: if you want to force a type assignment, override: if you want to override the value used before.
      */
-    assign(path, v,fallback=undefined,origin){
+    assign(path, v,fallback=undefined,params={origin:undefined, type:Object,override:undefined}){
+        let origin = typeof(params)=='object'?params.origin:params;
+        let override = typeof(params)=='object'?params.override:params=='override'?true:false;
+        let type = typeof(params)=='object'?params.type:Object;
         if(this.stack && Array.isArray(this.stack) && origin !='internal' && origin != 'override'){
             let data = {"method":"assign","path" : path}
             data['method'] == origin == 'modify'?"modify":"assign";
@@ -194,7 +214,6 @@ class Som{
         if (typeof v == "undefined"){
             v = fallback || this.defaultvalue
         }
-        let override = (arguments[3]=='override')?true:false;
         if(typeof path != "undefined" && path != "" && typeof path == "string"){
             var pS = path.split('.');
             /* define path and create it if required */
@@ -203,20 +222,87 @@ class Som{
                 if (pS[i][0] != "[" && pS[i][pS[i].length-1] != "]") { //If v is not an array allocation
                     if(Object(xom).hasOwnProperty(pS[i])){// if path present
                         if (i == pS.length -1){ // if it is the last element
-                            if(Array.isArray(xom[pS[i]])){ // if it is an array
+                            if(xom[pS[i]] instanceof Set || type == Set){
                                 if(override){
-                                    xom[pS[i]] = v
+                                    if (type == Set){
+                                        xom[pS[i]] = new Set([v])
+                                    }
+                                    else if (type == Array){
+                                        xom[pS[i]] = new Array()
+                                        xom[pS[i]].push(v)
+                                    }
+                                    else{
+                                        xom[pS[i]] = v
+                                    }
+
                                 }else{
-                                    xom[pS[i]].push(v)
+                                    if (xom[pS[i]] instanceof Set && type == Array){
+                                        let myArray = Array.from(xom[pS[i]]);
+                                        myArray.push(v);
+                                        xom[pS[i]] = myArray
+                                    }
+                                    else if (xom[pS[i]] instanceof Set){
+                                        xom[pS[i]].add(v)
+                                    }
+                                    else if(xom[pS[i]] instanceof Array){
+                                        let mySet = new Set(xom[pS[i]])
+                                        mySet.add(v);
+                                        xom[pS[i]] = mySet;
+                                    }
+                                    else if (xom[pS[i]] instanceof Object){
+                                        mySet = new Set([v]);
+                                        xom[pS[i]] = mySet;
+                                    }
+                                    else{
+                                        let mySet = new Set([xom[pS[i]]]);
+                                        mySet.add(v);
+                                        xom[pS[i]] = mySet;
+                                    }
+                                    
                                 }
-                                
                             }
-                            else{
+                            else if(Array.isArray(xom[pS[i]]) || type == Array){ // if it is an array
+                                if(override){
+                                    if (type == Set){
+                                        xom[pS[i]] = new Set([v])
+                                    }
+                                    else if (type == Array){
+                                        xom[pS[i]] = new Array()
+                                        xom[pS[i]].push(v)
+                                    }
+                                    else{
+                                        xom[pS[i]] = v
+                                    }
+                                }else{
+                                    if(xom[pS[i]] instanceof Array && type == Set){
+                                        let mySet = new Set(xom[pS[i]])
+                                        mySet.add(v);
+                                        xom[pS[i]] = mySet
+                                    }
+                                    else if(xom[pS[i]] instanceof Set){
+                                        let myArray = Array.from(xom[pS[i]]);
+                                        myArray.push(v);
+                                        xom[pS[i]] = myArray
+                                    }
+                                    else if(xom[pS[i]] instanceof Array){
+                                        xom[pS[i]].push(v)
+                                    }
+                                    else if(xom[pS[i]] instanceof Object){
+                                        xom[pS[i]] = v
+                                    }
+                                    else{
+                                        let myArray = [xom[pS[i]]];
+                                        myArray.push(v);
+                                        xom[pS[i]] = myArray
+                                    }
+                                }
+                            }
+                            else{ // path does not exist
                                 xom[pS[i]] = v
                             }
                             
                         }
-                        else{ // not the latest
+                        else{
                             if(typeof xom[pS[i]] == 'string' || typeof xom[pS[i]] == 'undefined' || typeof xom[pS[i]] == 'number'){
                                 xom[pS[i]] = {}
                             }
@@ -229,7 +315,15 @@ class Som{
                                 return undefined
                             }
                             else{
-                                xom[pS[i]] = v
+                                if (type==Set){
+                                    xom[pS[i]] = new Set([v])
+                                }
+                                else if (type == Array){
+                                    xom[pS[i]] = new Array(v)
+                                }
+                                else{
+                                    xom[pS[i]] = v
+                                }
                             }
                         }
                         else{
@@ -300,8 +394,6 @@ class Som{
             }
             this.stack.push(data)
         }
-        console.log(path)
-        console.log(object)
         if(typeof(path) == 'undefined' || path == ""){
             this.data = Object.assign(this.data,object);
             return this.data
@@ -310,7 +402,7 @@ class Som{
             let pS = path.split(".");
             let v = this.data;
             for (var i = 0; i < pS.length && v != undefined; i++) { // Traverse until found or undefined, return the final value to modify
-                console.log(pS[i])
+                //console.log(pS[i])
                 if (Array.isArray(v) && Math.abs(parseInt(pS[i]))<=v.length) { //If parent is array and path is in the index
                     if(parseInt(pS[i])<0){ /** Negative number */
                         v = v[v.length - Math.abs(parseInt(pS[i]))];
@@ -327,7 +419,12 @@ class Som{
                 }
             }
             if(typeof(v) != 'undefined' || v != this.defaultvalue){
-                if (Array.isArray(v) && Array.isArray(object)){
+                if (v instanceof Set && (object instanceof Array || object instanceof Set)){
+                    object.forEach(function(element){
+                        v.add(element);
+                    })
+                }
+                else if (Array.isArray(v) && Array.isArray(object)){
                     object.forEach(function(element){
                         v.push(element);
                     })
@@ -337,12 +434,12 @@ class Som{
                 }
                 else{
                     var newv = Object.assign(v,object);
-                    this.data = this.assign(path,newv,undefined,'internal')
+                    this.data = this.assign(path,newv,undefined,{origin:'internal'})
                 }
                 return this.data
             }
             else{
-                this.assign(path,object,undefined,'internal')
+                this.assign(path,object,undefined,{origin:'internal'})
                 return this.data
             }
         }
@@ -379,7 +476,18 @@ class Som{
                 if(Object(xom).hasOwnProperty(pS[i])){// if path present
                     if (i == pS.length -1){/** last element */
                         if(typeof xom[pS[i]] == "object"){
-                            delete xom[pS[i]]
+                            if (xom[pS[i]] instanceof Set){
+                                xom[pS[i]].delete(pS[i+1])
+                            }
+                            else if (xom[pS[i]] instanceof Array)
+                            {
+                                let index = array.indexOf(pS[i+1])
+                                xom[pS[i]].splice(index,1)
+                            }
+                            else{
+                                delete xom[pS[i]]
+                            }
+                            
                         }else{
                             if(key){
                                 delete xom[pS[i]]
@@ -439,7 +547,10 @@ class Som{
             let c_r = this.get(path);
             /* no element before OR the user wants to replace the v */
             if((typeof c_r=='undefined')||o){ 
-                this.assign(path,[v],undefined,'override')
+                this.assign(path,[v],undefined,{"override":true})
+            }
+            else if (c_r instanceof Set){
+                c_r.add(v)
             }
             else if (Array.isArray(c_r)){
                 c_r.push(v);
@@ -447,7 +558,7 @@ class Som{
             else if(typeof(c_r)=='object' || typeof(c_r)=="string"){
                 if(o == false){ /* if the user want to keep the original v */
                     let n_v = [c_r,v]
-                    this.assign(path,n_v,undefined,'internal')
+                    this.assign(path,n_v,undefined,{"origin":'internal'})
                 }
             }
         }
@@ -469,10 +580,10 @@ class Som{
             else{
                 o = Object.assign({}, o);
             }
-            s = s || this.get(path,undefined,'internal');
+            s = s || this.get(path,undefined,{origin:'internal'});
             if (typeof s == "undefined"){// create the path if it does not exist
                 this.assign(path,{});
-                s = this.get(path,undefined,'internal')
+                s = this.get(path,undefined,{origin:'internal'})
             }
 
         }
@@ -722,7 +833,7 @@ class Som{
      */
     subSom(path,dc,stack,context,origin){
         dc = dc?dc:false;
-        let data = this.get(path,this.defaultvalue,'internal');
+        let data = this.get(path,this.defaultvalue,{origin:'internal'});
         if(data==this.defaultvalue && dc==false){
             data = {}
             if(Array.isArray(path)){
@@ -783,11 +894,11 @@ class Som{
      * @param modFct function that is apply on the node. It passes the value as a parameter.
      */
     modify(path, modFct){
-        this.assign(Array.isArray(path)?path[0]:path, modFct(this.get(path,undefined,'modify')))
+        this.assign(Array.isArray(path)?path[0]:path, modFct(this.get(path,undefined,{origin:'modify'})))
         if(this.stack && Array.isArray(this.stack)){
             let data = {'method':'modify','path' : path}
             if(this.options.context != undefined){ /* if something has been provided in the context options */
-                data['context'] = typeof this.options.context == "function"?this.options.context({'method':'modify','value':modFct(this.get(path,undefined,'modify'))}):this.options.context;
+                data['context'] = typeof this.options.context == "function"?this.options.context({'method':'modify','value':modFct(this.get(path,undefined,{origin:'modify'}))}):this.options.context;
             }
             this.stack.push(data)
         }
