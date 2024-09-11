@@ -1,22 +1,24 @@
 # Simple Object Manager description
 
-This page will explain the philosophy, origin and use-cases that this library will support.
+This page will explain the philosophy, origin and use-cases that this library was intended to support.
 
 For Adobe Experience Platform, tracking the website through AEP Web SDK is expected.\
 AEP Web SDK pass an object that are references to different fields specified during the AEP Schema creation.\
 
-However, the management of such object is proven to be difficult, because there is no way to handle the object directly in the AEP Web SDK library, in contrary to `s` object for the Adobe Analytics library.\
-This project aims at creating such intermediary step that would simplify the implementation and management of object reference.
+However, the management of such object is proven to be difficult to handle, because there is no way to handle the object directly in the AEP Web SDK library, in contrary to `s` object for the Adobe Analytics library.\
+
+This project aimed at creating such intermediary step that would simplify the implementation and management of object reference. Accessing and creating paths easily.
 
 ## Simple Object Manager Origin
 
-The main origin of that project comes from question I received or challenge(s) that I have when dealing with legacy implementation from (Adobe) Analytics to the AEP Web SDK.\
+The main origin of that project comes from questions I received or challenge(s) that I have when dealing with legacy implementation from (Adobe) Analytics to the AEP Web SDK.\
 The default approach for (Adobe) Analytics is to prepare an object, `s` for Adobe, and then fire the object once you are ready to fire.
 
-The AEP Web SDK doesn't possess such object, therefore, it is require to use a Data Element to prepare your object.
+The AEP Web SDK doesn't possess such object, therefore, it is require to use a Data Element to prepare your object before sending it via the library.
 
-However, the default data element created is not callable from the code and not easy to manipulate.\
-The modification of the fields can not be done directly in it, it references other data elements. Management and runtime behavior of such object is complex.
+However, the default data elements created is not easy to manipulate.\
+The modification of the fields can not be done directly in it, it references other data elements.\
+This creates a layer of complexity to understand the Web SDK implementation and does not solve the complexity of creating the XDM object.
 
 The current approach of AEP Web SDK:
 * Let you figure it out yourself how to manage such complex object (via complex JS code)

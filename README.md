@@ -1,23 +1,17 @@
 # Simple Object Manager
 
-The Simple Object Manager (`Som`) is a project that tends to create a object containing methods helping you on manipulating data object representation.\
+The Simple Object Manager (`Som`) is a project that tends to create an object containing methods helping you on manipulating data object representation.\
 
 By default, this object can be available on a global scale (window) and can be instanciated multiple times, so you can handle different instances of the `Som`.
 
-The goal of this library is to facilitate the object management for less advanced users that have to deal with complex data representation (Objects, Arrays interlocked).\
-Working with objects can be cumbersome and bring issues on your data collection implementation. These issues leads to either workarounds or just failing the data collection altogether.
+The goal of this library is to facilitate the object management for less advanced users that have to deal with complex data representation (Objects, Arrays interlocked, Set or nested Objects).\
+Working with objects can be cumbersome and bring challenges on your data collection implementation. These chalenges leads usually to different approaches to solve them, it creates workarounds or replication of codes.
 
-You can find more information on that project and the different methods supported in the following sections.
-
-## Simple Object Manager Philosophy
-
-This documentation will provide you the philosophy and use-cases cases supported by the Simple Object Manager.\
-
-[Simple Object Manager Philosophy](Simple_Object_Manager_Origin.md)
+This [page](Simple_Object_Manager_Origin.md) will provide you the origin and philosophy behind the Simple Object Manager(`Som`).\
 
 ## Methods
 
-This documentation will provide you with documentation on how to instantiate the `Som` class and the different methods available from the `Som` instance.\
+This documentation will provide you with information on how to instantiate the `Som` class and the different methods available from the `Som` instance.\
 [Simple Object Manager Methods](Simple_Object_Manager_Methods.md)
 
 If you are more of hands-on test enthusiast, you can directly see the [cheat sheet](Simple_Object_Manager_CheatSheet.md) 
@@ -35,10 +29,11 @@ Here are the link to the different libraries.
 
 ### Simple Object Manager - JS
 
-This [link](https://github.com/pitchmuc/Simple-Object-Manager/tree/main/Simple%20Object%20Manager%20-%20JS) will go to the JS version of the library.
+This [link](src) will go to the JS version of the library.
 
 ### Simple Object Manager - Launch Extension [tbd]
 
+_TBD_ The Launch Extension needs to be built.
+
 ## Releases
-Once a stable version is achieved, any further improvement or modification will be documented in this section.\
-[Link to release note](./release.md).
+You can find all the releases information here : [Link to release note](./release.md).
