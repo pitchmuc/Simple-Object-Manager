@@ -74,6 +74,11 @@ Method description:
   Arguments:
   * path : REQUIRED : path using the dot notation to specify where to place the value.
   * value : REQUIRED : Value to be assigned
+  * fallback : OPTIONAL : In case you are using dynamic assignment and you need a fallback when a value is not presenet. The default is `undefined`
+  * params : OPTIONAL : Object with the following keys: `type` and `override`
+  `type` can provide the data type to be forced on the value assign. It can then change the value contain in the existing path to another. Supported types : `Array` and `Set`.
+  `override` is the default behavior for most assignment to object, but when assigning to `Set` or `Array`, the default behavior will push the new value. Setting `override` to `true` will replace the value contain in these objects.
+  
 
 In case the value is `undefined`, the `undefined` value has been added to the key.\
 
@@ -172,6 +177,57 @@ In case, you do not assign any value, the `som` will set an `undefined` value in
     */
 ```
 see above how the element is set on position 0, even though you pushed position 1, because no position 0 existed.
+
+
+You can define a `Set` this way: 
+```JS
+    som.assign('_tenant.mySet',new Set(['key1']))
+    /*
+    This will result in adding this element:
+    {
+        "_tenant":{
+            mySet:{'key1'}
+        }    
+    }
+    */
+```
+or this way: 
+```JS
+    som.assign('_tenant.mySet',"key1",undefined,{type:Set})
+    /*
+    This will result in adding this element:
+    {
+        "_tenant":{
+            mySet:{'key1'}
+        }    
+    }
+    */
+```
+
+In case you have another type of value, you can force the conversion to a new type (`Array` or `Set`) via the type method. 
+
+Example: 
+```JS
+    som.assign('_tenant.myNumber',1,)
+    /*
+    This will result in adding this element:
+    {
+        "_tenant":{
+            myNumber:1
+        }    
+    }
+    */
+   som.assign('_tenant.myNumber',2,undefined,{type:Set})
+   /*
+   Now the data will look like this:
+   {
+        "_tenant":{
+            myNumber:{1,2}
+        }    
+    }   
+   */
+```
+
 
 **Overriding value**
 If you have setup a value in a key (`string`,`number`,`undefined`), setting a structure with the key will create the new structure and make you loose your original value.\
@@ -404,7 +460,7 @@ in case you have an array and wants to look at a specific element of that array,
         "family_members":[{
             "firstname" : "julien"
             },
-            {"firstname" : "jennifer"}
+            {"firstname" : "juliette"}
             ]
     } 
     
@@ -417,7 +473,70 @@ in case you have an array and wants to look at a specific element of that array,
 ```
 
 In case you want to return something different than the default value set in your class, you can pass a second parameter.
+Example:
 
+```JS
+    /* for som.data that returns
+    {
+        "family_members":[{
+            "firstname" : "julien"
+            },
+            {"firstname" : "juliette"}
+            ]
+    } 
+    
+    */
+
+    som.get('family_member.3.firstname','unknown')
+    /*
+    This will return 'unknown' because there is 4 items (with a 3rd position requested)
+    */
+```
+
+#### Accessing elements on Array and Set
+
+For Set, when you request the Set, you can also define the value contained in the Set, and if this value is present it will return `true`, otherwise returns `false`.
+
+Example: 
+```JS
+    /* for som.data that returns
+    {
+        "mySet":{'key1','key2'}
+    } 
+    */
+
+    som.get('mySet.key1')
+    /*
+    This will return 'true' because there is the key1 in the set
+    */
+
+    som.get('mySet.key3')
+    /*
+    This will return 'false' because there is not the key3 in the set
+    */
+
+```
+
+The same type of check can be done on array by using the `{arraycheck:true}` in the params
+
+```JS
+    /* for som.data that returns
+    {
+        "myArray":['key1','key2']
+    } 
+    */
+
+    som.get('myArray.key1')
+    /*
+    This will return 'undefined' because "key1" is not an index of array
+    */
+
+    som.get('myArray.key1',"fallback",{arraycheck:true})
+    /*
+    This will return 'true' because the behavior has changed to check for the value in the array.
+    */
+
+```
 
 ### Pushing elements
 
