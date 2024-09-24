@@ -211,6 +211,16 @@ describe('Remove value & clear',()=>{
         newSom.remove('data.array1.0')
         assert(newSom.get('data.array1.0') == 'value2','value2 should be returned now')
         assert(newSom.get() == newSom.remove('data.array1.3'),'nothing should be changed')
+        newSom.assign('data.mySet',new Set(['key1','key2','key3']));
+        newSom.remove('data.mySet.key4');
+        assert(newSom.get('data.mySet').size == 3,'It should still be 3 elements')
+        newSom.remove('data.mySet.key3');
+        assert(newSom.get('data.mySet').size == 2,'It should only be 2 elements')
+        newSom.assign('data.mySet','key4',undefined,{type:Array});
+        newSom.remove('data.mySet.key4');
+        assert(newSom.get('data.mySet').length == 2,'It should only be 2 elements')
+        newSom.remove('data.mySet.key3');
+        assert(newSom.get('data.mySet').length == 2,'It should still be 2 elements')
         newSom.clear();
         assert(Object.entries(newSom.data).length == 0, 'should be empty object');
     })
