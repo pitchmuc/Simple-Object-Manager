@@ -774,6 +774,24 @@ mysom.remove('tenant.commerce');
 }
 ```
 
+You can also remove specific elements nested in `Array` or `Set`
+
+```JS
+/*
+ mysom contains:
+ {
+    tenant: ["key1","key2","key3"]
+ } 
+*/
+
+mysom.remove('tenant.key2');
+// will result in:
+{
+    "tenant" : ["key1","key3"]
+}
+```
+
+
 ### clear
 
 The SOM instance can be cleaned completely from any data.\
