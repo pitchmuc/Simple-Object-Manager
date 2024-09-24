@@ -474,20 +474,21 @@ class Som{
         for (var i=0;i<pS.length && xom != undefined;i++){ // Traverse a create if necessary
             if (typeof(pS[i]) == 'string' && isNaN(pS[i]) == true) { //If v is a string
                 if(Object(xom).hasOwnProperty(pS[i])){// if path present
+                    if (i == pS.length -2){
+                        if (xom[pS[i]] instanceof Set){
+                            xom[pS[i]].delete(pS[i+1])
+                        }
+                        else if (xom[pS[i]] instanceof Array)
+                        {
+                            let index = xom[pS[i]].indexOf(pS[i+1])
+                            if (index != -1){
+                               xom[pS[i]].splice(index,1)
+                            }
+                        }
+                    }
                     if (i == pS.length -1){/** last element */
                         if(typeof xom[pS[i]] == "object"){
-                            if (xom[pS[i]] instanceof Set){
-                                xom[pS[i]].delete(pS[i+1])
-                            }
-                            else if (xom[pS[i]] instanceof Array)
-                            {
-                                let index = array.indexOf(pS[i+1])
-                                xom[pS[i]].splice(index,1)
-                            }
-                            else{
-                                delete xom[pS[i]]
-                            }
-                            
+                            delete xom[pS[i]]
                         }else{
                             if(key){
                                 delete xom[pS[i]]
