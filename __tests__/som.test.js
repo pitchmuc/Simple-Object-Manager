@@ -243,6 +243,24 @@ describe('Replacing values',()=>{
         newSom.replace('value','new',true);
         assert(newSom.get('data.array1.0') == 'new','new should be returned');
         assert(newSom.get('data.array2.0.foo') == 'new','new should be returned');
+    }),
+    test('Replacing complex structure',async() => {
+        let newSom = new Som();
+        newSom.assign('my.set',new Set(["value1","value2","value3"]))
+        newSom.assign('my.normal.path','value2');
+        newSom.assign('my.array',['value1','value2','value3']);
+        expect(newSom.get('my.set').size).toBe(3);
+        expect(newSom.get('my.array').length).toBe(3);
+        expect(newSom.get('my.set.value1')).toBe(true);
+        newSom.replace('value1','new1');
+        expect(newSom.get('my.set.value1')).toBe(false);
+        newSom.replace('value','new2',true);
+        expect(newSom.get('my.set').size).toBe(2);
+        expect(newSom.get('my.array').length).toBe(3);
+        expect(newSom.get('my.set.new2')).toBe(true);
+        expect(newSom.get('my.set.new1')).toBe(true);
+        expect(newSom.get('my.array').includes('new1')).toBe(true);
+        expect(newSom.get('my.array').includes('new2')).toBe(true);
     })
 })
 

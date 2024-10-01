@@ -11,7 +11,7 @@ class Som{
     */
     constructor(object,options={dv:undefined,deepcopy:true,stack:false,context:undefined}) {
         this.data = {};
-        this.version = "1.0.1";
+        this.version = "1.0.2";
         this.deepcopy = options.deepcopy==undefined?true:options.deepcopy;
         this.defaultvalue = typeof arguments[1]=='string'?arguments[1]:options.dv; /* legacy backward compatibility with df parameter*/
         if(options.stack){
@@ -706,7 +706,7 @@ class Som{
                     if(Array.isArray(o[k])){
                         let t = this; /* save "this" */
                         let flagSArray = false; /*flag for simple array*/
-                        if(o[k].length>0){
+                        if(o[k].length>0){/*contains data*/
                             flagSArray = typeof o[k][0] == 'string' || typeof o[k][0] == 'number'?true:false;
                         }
                         let i = o[k].indexOf(o_v) /* if simple array of values */
@@ -726,6 +726,23 @@ class Som{
                                     t.replace(o_v,n_v,regex,el,'internal')
                                 }
                         })
+                        }
+                    }
+                    else if(o[k] instanceof Set){
+                        for (let val of o[k]){
+                            if(regex){
+                                if(myregexTest.test(val)){
+                                    o[k].delete(val)
+                                    o[k].add(n_v)
+                                }
+                            }
+                            else{
+                                if(val == o_v){
+                                    o[k].delete(o_v)
+                                    o[k].add(n_v)
+                                }
+                            }
+                            
                         }
                     }
                     else{
@@ -775,6 +792,25 @@ class Som{
                             ps.push(tmp_cp)
                         }
                     }
+                }
+                else if(o[k] instanceof Set){
+                    if(regex){
+                        for (let setvalue of o[k]){
+                            if(myregexTest.test(setvalue)){
+                                let tmp_cp = cp==""?k:cp+'.'+k+'.'+setvalue;
+                                ps.push(tmp_cp)
+                            }
+                        }
+                    }
+                    else{
+                        for (let setvalue of o[k]){
+                            if(setvalue == value){
+                                let tmp_cp = cp==""?k:cp+'.'+k+'.'+setvalue;
+                                ps.push(tmp_cp)
+                            }
+                        }
+                    }
+
                 }
                 else if(Array.isArray(o[k])){
                     let flagSArray = false; /*flag for simple array*/
