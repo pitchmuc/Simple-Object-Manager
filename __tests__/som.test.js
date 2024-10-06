@@ -143,6 +143,21 @@ describe('Testing Set capability',()=>{
         assert(newSom.get('my.set').size == 1,'It should be of size 1');
         assert(newSom.get('my.set.1'),'It should be true');
     })
+    test('Testing Array or Set assignment to existing structure',async()=>{
+        let newSom = new Som()
+        newSom.assign('my.array',['key1']);
+        newSom.assign('my.set',new Set(['key1']))
+        setTest = new Set(['key1','key2'])
+        arrayTest = ['key1','key2']
+        newSom.assign('my.array',arrayTest);
+        assert(newSom.get('my.array').length == 3,"There should 3 items")
+        newSom.assign('my.set',setTest);
+        assert(newSom.get('my.set').size == 2,"There should 2 items")
+        newSom.assign('my.array',setTest);
+        assert(newSom.get('my.array').length == 5,"There should 5 items")
+        newSom.assign('my.set',arrayTest);
+        assert(newSom.get('my.set').size == 2,"There should 2 items")
+    })
 })
 
 describe('assigning value to empty SOM',()=>{

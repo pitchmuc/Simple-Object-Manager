@@ -222,83 +222,181 @@ class Som{
                 if (pS[i][0] != "[" && pS[i][pS[i].length-1] != "]") { //If v is not an array allocation
                     if(Object(xom).hasOwnProperty(pS[i])){// if path present
                         if (i == pS.length -1){ // if it is the last element
-                            if(xom[pS[i]] instanceof Set || type == Set){
-                                if(override){
+                            if(xom[pS[i]] instanceof Set){
+                                if(override){ /* Override existing element */
                                     if (type == Set){
-                                        xom[pS[i]] = new Set([v])
+                                        xom[pS[i]] = new Set()
+                                        if(v instanceof Set || v instanceof Array){
+                                            for(let val of v){
+                                                xom[pS[i]].add(val)
+                                            }
+                                        }else{
+                                            xom[pS[i]].add(v)
+                                        }
+                                        
                                     }
                                     else if (type == Array){
                                         xom[pS[i]] = new Array()
-                                        xom[pS[i]].push(v)
+                                        if(v instanceof Set || v instanceof Array){
+                                            for(let val of v){
+                                                xom[pS[i]].push(val)
+                                            }
+                                        }else{
+                                            xom[pS[i]].push(v)
+                                        }
                                     }
                                     else{
-                                        xom[pS[i]] = v
+                                        xom[pS[i]] = new Set()
+                                        if(v instanceof Set || v instanceof Array){
+                                            for(let val of v){
+                                                xom[pS[i]].add(val)
+                                            }
+                                        }else{
+                                            xom[pS[i]].add(v)
+                                        }
                                     }
-
                                 }else{
-                                    if (xom[pS[i]] instanceof Set && type == Array){
+                                    if (type == Array){
+                                        /* Transform the set to Array */
                                         let myArray = Array.from(xom[pS[i]]);
-                                        myArray.push(v);
+                                        if(v instanceof Set || v instanceof Array){
+                                            for(let val of v){
+                                                myArray.push(val)
+                                            }
+                                        }else{
+                                            myArray.push(v)
+                                        }
                                         xom[pS[i]] = myArray
                                     }
-                                    else if (xom[pS[i]] instanceof Set){
-                                        xom[pS[i]].add(v)
-                                    }
-                                    else if(xom[pS[i]] instanceof Array){
-                                        let mySet = new Set(xom[pS[i]])
-                                        mySet.add(v);
-                                        xom[pS[i]] = mySet;
-                                    }
-                                    else if (xom[pS[i]] instanceof Object){
-                                        mySet = new Set([v]);
-                                        xom[pS[i]] = mySet;
+                                    else if(type == Object && !v instanceof Set && ! v instanceof Array){
+                                        xom[pS[i]] = v
                                     }
                                     else{
-                                        let mySet = new Set([xom[pS[i]]]);
-                                        mySet.add(v);
-                                        xom[pS[i]] = mySet;
+                                        if(v instanceof Set || v instanceof Array){
+                                            for(let val of v){
+                                                xom[pS[i]].add(val)
+                                            }
+                                        }else{
+                                            xom[pS[i]].add(v)
+                                        }
                                     }
                                     
                                 }
                             }
-                            else if(Array.isArray(xom[pS[i]]) || type == Array){ // if it is an array
+                            else if(xom[pS[i]] instanceof Array){ // if it is an array
                                 if(override){
                                     if (type == Set){
-                                        xom[pS[i]] = new Set([v])
+                                        xom[pS[i]] = new Set()
+                                        if(v instanceof Set || v instanceof Array){
+                                            for(let val of v){
+                                                xom[pS[i]].add(val)
+                                            }
+                                        }else{
+                                            xom[pS[i]].add(v)
+                                        }
                                     }
                                     else if (type == Array){
                                         xom[pS[i]] = new Array()
-                                        xom[pS[i]].push(v)
+                                        if(v instanceof Set || v instanceof Array){
+                                            for(let val of v){
+                                                xom[pS[i]].push(val)
+                                            }
+                                        }else{
+                                            xom[pS[i]].push(v)
+                                        }
                                     }
                                     else{
-                                        xom[pS[i]] = v
+                                        xom[pS[i]] = new Array()
+                                        if(v instanceof Set || v instanceof Array){
+                                            for(let val of v){
+                                                xom[pS[i]].push(val)
+                                            }
+                                        }else{
+                                            xom[pS[i]].push(v)
+                                        }
                                     }
                                 }else{
-                                    if(xom[pS[i]] instanceof Array && type == Set){
-                                        let mySet = new Set(xom[pS[i]])
-                                        mySet.add(v);
-                                        xom[pS[i]] = mySet
+                                    if(type == Set){
+                                        xom[pS[i]] = new Set(xom[pS[i]])
+                                        if(v instanceof Set || v instanceof Array){
+                                            for(let val of v){
+                                                xom[pS[i]].add(val)
+                                            }
+                                        }else{
+                                            xom[pS[i]].add(v)
+                                        }
                                     }
-                                    else if(xom[pS[i]] instanceof Set){
-                                        let myArray = Array.from(xom[pS[i]]);
-                                        myArray.push(v);
-                                        xom[pS[i]] = myArray
-                                    }
-                                    else if(xom[pS[i]] instanceof Array){
-                                        xom[pS[i]].push(v)
-                                    }
-                                    else if(xom[pS[i]] instanceof Object){
+                                    else if(type == Object && !v instanceof Set && ! v instanceof Array){
                                         xom[pS[i]] = v
                                     }
                                     else{
-                                        let myArray = [xom[pS[i]]];
-                                        myArray.push(v);
-                                        xom[pS[i]] = myArray
+                                        if(v instanceof Set || v instanceof Array){
+                                            for(let val of v){
+                                                xom[pS[i]].push(val)
+                                            }
+                                        }else{
+                                            xom[pS[i]].push(v)
+                                        }
                                     }
                                 }
                             }
-                            else{ // path does not exist
-                                xom[pS[i]] = v
+                            else{ // path does not exist or not Array or Set
+                                if(override){
+                                    if(type == Set){
+                                        xom[pS[i]] = new Set()
+                                        if(v instanceof Array || v instanceof Set){
+                                            for(let val of v){
+                                                xom[pS[i]].add(val)
+                                            }
+                                        }
+                                        else{
+                                            xom[pS[i]].add(v)
+                                        }
+                                        
+                                    }
+                                    else if (type == Array){
+                                        xom[pS[i]] = new Array()
+                                        if(v instanceof Array || v instanceof Set){
+                                            for(let val of v){
+                                                xom[pS[i]].push(val)
+                                            }
+                                        }
+                                        else{
+                                            xom[pS[i]].push(v)
+                                        }
+                                    }
+                                    else{
+                                        xom[pS[i]] = v
+                                    }
+                                }
+                                else{
+                                    if(type == Set){
+                                        xom[pS[i]] = new Set([xom[pS[i]]])
+                                        if(v instanceof Array || v instanceof Set){
+                                            for(let val of v){
+                                                xom[pS[i]].add(val)
+                                            }
+                                        }
+                                        else{
+                                            xom[pS[i]].add(v)
+                                        }
+
+                                    }
+                                    else if (type == Array){
+                                        xom[pS[i]] = new Array(xom[pS[i]])
+                                        if(v instanceof Array || v instanceof Set){
+                                            for(let val of v){
+                                                xom[pS[i]].push(val)
+                                            }
+                                        }
+                                        else{
+                                            xom[pS[i]].push(v)
+                                        }
+                                    }
+                                    else{
+                                        xom[pS[i]] = v
+                                    }
+                                }
                             }
                             
                         }
