@@ -3,6 +3,9 @@
 This page will provide all the release note when a version or subversion of the library has been pushed.
 This is keeping tracked of the release since version 0.1.0.
 
+## v 1.0.3
+* fix edge case when data returned are `0` or fallback is `0`. It was returning undefined.
+
 ## v 1.0.1
 * support on possibility to force type when assigning
 * support `Set` object

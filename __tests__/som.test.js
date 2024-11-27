@@ -32,6 +32,9 @@ describe('Testing the GET capabilities', ()=>{
         assert(newSom.get('my.number') == 2, 'Should be returning 2');
         assert(newSom.get('my.set.3'), 'Should be returning true');
         assert(newSom.get('my.array.2') == 3, 'Should be returning 3');
+        newSom.assign('my.zero',0)
+        assert(newSom.get('my.zero') == 0, 'Should be returning 0');
+        assert(newSom.get('my.zerosss',0) == 0, 'Should be returning 0');
     })
     test('Simple Structure & complex Get',async()=>{
         let newSom = new Som();

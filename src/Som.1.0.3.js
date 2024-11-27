@@ -11,7 +11,7 @@ class Som{
     */
     constructor(object,options={dv:undefined,deepcopy:true,stack:false,context:undefined}) {
         this.data = {};
-        this.version = "1.0.2";
+        this.version = "1.0.3";
         this.deepcopy = options.deepcopy==undefined?true:options.deepcopy;
         this.defaultvalue = typeof arguments[1]=='string'?arguments[1]:options.dv; /* legacy backward compatibility with df parameter*/
         if(options.stack){
@@ -168,7 +168,7 @@ class Som{
         for (let res in results) {
             result = result || results[res]['value']
         }
-        if((typeof result == "undefined" && fallback == "") || result === "" || result === false){
+        if((typeof result == "undefined" && fallback === "") || result === "" || result === false || result === 0){
             if(this.stack && Array.isArray(this.stack) && origin != 'internal'){
                 let data = {'method':'get','path' : path}
                 if(this.options.context != undefined){ /* if something has been provided in the context options */
@@ -176,10 +176,10 @@ class Som{
                 }
                 this.stack.push(data)
             }
-            return result===false?result:''; /*handling false value and '' fallback that get overriden */
+            return result===false?result:result===0?0:''; /*handling false value and 0 and '' fallback that get overriden */
         }
         else{
-            let finalResult = result || fallback || this.defaultvalue || undefined
+            let finalResult = result || this.defaultvalue || undefined || fallback
             if(this.stack && Array.isArray(this.stack) && origin != 'internal'){
                 let data = {'method':'get','path' : path}
                 if(this.options.context != undefined){ /* if something has been provided in the context options */
