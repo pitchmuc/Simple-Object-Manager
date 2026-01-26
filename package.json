@@ -4,12 +4,13 @@
     "description": "Simple Object Manager",
     "main": "src/Som.js",
     "scripts": {
-      "test": "jest"
+        "test": "jest"
     },
     "keywords": [],
     "author": "julien piccini",
     "license": "ISC",
     "devDependencies": {
-      "jest": "^29.2.0"
+        "@adobe/reactor-sandbox": "^13.4.0",
+        "jest": "^29.2.0"
     }
-  }
+}

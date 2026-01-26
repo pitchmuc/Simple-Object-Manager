@@ -168,7 +168,7 @@ class Som{
         for (let res in results) {
             result = result || results[res]['value']
         }
-        if((typeof result == "undefined" && fallback === "") || result === "" || result === false || result === 0){
+        if((typeof result == "undefined" && fallback === "") || result === "" || result === false || result === 0){ /* Taking care of falsy values */
             if(this.stack && Array.isArray(this.stack) && origin != 'internal'){
                 let data = {'method':'get','path' : path}
                 if(this.options.context != undefined){ /* if something has been provided in the context options */
