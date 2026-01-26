@@ -1,22 +1,37 @@
 {
-  "displayName": "som",
+  "displayName": "Simple Object Manager (Som)",
   "name": "som",
   "platform": "web",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Simple Object Manager JavaScript framework. Provide an easy way to manipulate objects via simple methods and avoid dealing with complex nested structure via difficult functions",
   "author": {
-    "name": "Julien Piccini"
+    "name": "Julien Piccini",
+    "url": "http://www.datanalyst.info",
+    "email": "piccini.julien@gmail.com"
   },
   "viewBasePath": "src/view/",
+  "main": "src/lib/main.js",
   "configuration": {
     "viewPath": "configuration/configuration.html",
     "schema": {
       "$schema": "http://json-schema.org/draft-04/schema#",
       "type": "object",
-      "properties": {}
+      "properties": {
+        "myObjects": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
     }
   },
-  "iconPath": " icon.svg",
+  "iconPath": "resources/icons/icon.svg",
   "sharedModules": [
     {
       "name": "som",
