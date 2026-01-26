@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title>Extension Configuration</title>
+    <style>
+      /* Styling */
+      body { font-family: sans-serif; padding: 20px; }
+      #rows-placeholder { margin-bottom: 15px; }
+      .obj-row { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
+      /* Input takes up all available space since there is no dropdown now */
+      .obj-row input { padding: 8px; flex: 1; border: 1px solid #ccc; border-radius: 4px; }
+      .btn { padding: 8px 12px; cursor: pointer; border-radius: 4px; border: none;}
+      .btn-add { background-color: #0071bc; color: white; }
+      .btn-remove { background-color: #e0e0e0; color: #333; border: 1px solid #ccc; }
+      .btn-remove:hover { background-color: #d1d1d1; }
+    </style>
+  </head>
+  <body>
+    
+    <h3>Variable Name Configuration</h3>
+    <p>Define the names of the variables you want to create.</p>
+
+    <div id="rows-placeholder"></div>
+
+    <button id="add-btn" class="btn btn-add">+ Add Variable</button>
+
+    <script src="https://assets.adobedtm.com/activation/reactor/extensionbridge/extensionbridge.min.js"></script>
+    <script>
+      
+      // --- HELPER: Create Row (Name Only) ---
+      function createRow(nameValue = '') {
+        var container = document.getElementById('rows-placeholder');
+        var rowDiv = document.createElement('div');
+        rowDiv.className = 'obj-row';
+
+        // Simplified HTML: Only Input Name and Remove Button
+        rowDiv.innerHTML = `
+          <input type="text" class="input-name" placeholder="Enter variable name" value="${nameValue}">
+          <button class="btn btn-remove">Remove</button>
+        `;
+
+        // Remove button logic
+        rowDiv.querySelector('.btn-remove').addEventListener('click', function() {
+          container.removeChild(rowDiv);
+        });
+
+        container.appendChild(rowDiv);
+      }
+
+      // Add Button Logic
+      document.getElementById('add-btn').addEventListener('click', function() {
+        createRow(); 
+      });
+
+      // --- MAIN EXTENSION BRIDGE ---
+      window.extensionBridge.register({
+        
+        init: function(info) {
+          var settings = info.settings || {};
+          var savedObjects = settings.myObjects || [];
+
+          if (savedObjects.length > 0) {
+            // Populate existing rows
+            savedObjects.forEach(function(obj) {
+              createRow(obj.name);
+            });
+          } else {
+            // Create one empty row by default
+            createRow();
+          }
+        },
+
+        getSettings: function() {
+          var rows = document.querySelectorAll('.obj-row');
+          var results = [];
+
+          rows.forEach(function(row) {
+            var nameVal = row.querySelector('.input-name').value;
+
+            // Only save if name is not empty
+            if (nameVal.trim() !== "") {
+              results.push({
+                name: nameVal
+              });
+            }
+          });
+
+          return {
+            myObjects: results
+          };
+        },
+
+        validate: function() {
+          var rows = document.querySelectorAll('.obj-row');
+          var isValid = true;
+
+          rows.forEach(function(row) {
+            var input = row.querySelector('.input-name');
+            var nameVal = input.value;
+            
+            if (!nameVal || nameVal.trim() === "") {
+              input.style.borderColor = "red";
+              isValid = false;
+            } else {
+              input.style.borderColor = "#ccc";
+            }
+          });
+
+          return isValid;
+        }
+      });
+    </script>
+  </body>
+</html>
