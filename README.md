@@ -9,6 +9,19 @@ Working with objects can be cumbersome and bring challenges on your data collect
 
 This [page](Simple_Object_Manager_Origin.md) will provide you the origin and philosophy behind the Simple Object Manager(`Som`).\
 
+## Simple Object Manager Benefits
+
+The Simple Object Manager (`Som`) provides you with a set of methods to manipulate complex data objects easily.\
+Some of the benefits of using the Simple Object Manager (`Som`) include:
+- **Easy to use methods**: The Simple Object Manager (`Som`) provides you with a set of methods that are easy to use and understand, making it simple to manipulate complex data objects.
+- **Safe access to nested properties**: The Simple Object Manager (`Som`) allows you to safely access nested properties of objects without worrying about undefined errors.
+- **Default values**: The Simple Object Manager (`Som`) allows you to set default values when getting properties, making it easy to handle missing data.
+- **Automatic structure creation**: The Simple Object Manager (`Som`) allows you to assign values to nested properties easily, creating the structure if it does not exist.
+- **Multiple instances**: You can create multiple instances of the Simple Object Manager (`Som`), allowing you to manage different data objects independently.
+- **Global or local scope**: The Simple Object Manager (`Som`) can be available on a global scale (window) or can be instantiated locally, giving you flexibility in how you use it.
+- **Lightweight**: The Simple Object Manager (`Som`) is a lightweight library (15Kb) that does not add significant overhead to your application.
+- **Capabilities to log operations**: The Simple Object Manager (`Som`) can log operations to the console for debugging purposes.
+
 ## Methods
 
 This documentation will provide you with information on how to instantiate the `Som` class and the different methods available from the `Som` instance.\

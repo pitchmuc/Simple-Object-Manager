@@ -96,20 +96,7 @@
 
         validate: function() {
           var rows = document.querySelectorAll('.obj-row');
-          var isValid = true;
-
-          rows.forEach(function(row) {
-            var input = row.querySelector('.input-name');
-            var nameVal = input.value;
-            
-            if (!nameVal || nameVal.trim() === "") {
-              input.style.borderColor = "red";
-              isValid = false;
-            } else {
-              input.style.borderColor = "#ccc";
-            }
-          });
-
+          var isValid = true;        
           return isValid;
         }
       });

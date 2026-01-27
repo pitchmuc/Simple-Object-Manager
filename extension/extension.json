@@ -2,7 +2,7 @@
   "displayName": "Simple Object Manager (Som)",
   "name": "som",
   "platform": "web",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Simple Object Manager JavaScript framework. Provide an easy way to manipulate objects via simple methods and avoid dealing with complex nested structure via difficult functions",
   "author": {
     "name": "Julien Piccini",
