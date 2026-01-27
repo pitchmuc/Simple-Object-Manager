@@ -16,7 +16,7 @@ The SOM project is also available as an Adobe Launch Extension. This allows user
   - [Usage](#usage)
     - [Example 1: Tracking your webpage information](#example-1-tracking-your-webpage-information)
     - [Example 2: Tracking a product view event](#example-2-tracking-a-product-view-event)
-  - [Example 3: Tracking an Order Completed event](#example-3-tracking-an-order-completed-event)
+    - [Example 3: Tracking an Order Completed event](#example-3-tracking-an-order-completed-event)
 
 
 ## Installation
@@ -104,7 +104,7 @@ In the example below, I will assume that you have created a Som object called `x
 ```javascript
 // get your Google Data dataLayer as a Som object
 
-myDataLayer = New Som(dataLayerHandler);
+myDataLayer = new Som(dataLayerHandler);
 // using the som Object to build your xdm.web.webPageDetails object
 // assuming the following structure in your dataLayer:
 /***
@@ -148,7 +148,7 @@ As you can see you can set the different elements of the XDM schema using the So
 
 ```javascript
 // get your Google Data dataLayer as a Som object
-myDataLayer = New Som(dataLayerHandler);
+myDataLayer = new Som(dataLayerHandler);
 // using the som Object to build your xdm commerce object
 // assuming the following structure in your dataLayer:
 /***
@@ -184,11 +184,11 @@ alloy("sendEvent", {
 });
 ```
 
-## Example 3: Tracking an Order Completed event
+### Example 3: Tracking an Order Completed event
 
 ```javascript
 // get your Google Data dataLayer as a Som object
-myDataLayer = New Som(dataLayerHandler);
+myDataLayer = new Som(dataLayerHandler);
 // using the som Object to build your xdm commerce object
 // assuming the following structure in your dataLayer:
 /***    
