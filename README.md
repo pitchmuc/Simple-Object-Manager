@@ -44,9 +44,9 @@ Here are the link to the different libraries.
 
 This [link](src) will go to the JS version of the library.
 
-### Simple Object Manager - Launch Extension [tbd]
+### Simple Object Manager - Launch Extension
 
-_TBD_ The Launch Extension needs to be built.
+This [link](extension.md) will go to the Adobe Launch Extension documentation.
 
 ## Releases
 You can find all the releases information here : [Link to release note](./release.md).
