@@ -12,9 +12,9 @@ describe('initialize SOM with empty object and simple assign',()=>{
         assert(som1.get() != data,'should have been deepcopied')
         som2 = new Som(data,undefined,false)
         assert(som2.get() == data,'should NOT have been deepcopied')
-        som3 = new Som(data,'else',true)
-        assert(som3.get('something') == 'else','should returned else')
-        som3.assign('data.foo','bar');
+        soAnalytics = new Som(data,'else',true)
+        assert(soAnalytics.get('something') == 'else','should returned else')
+        soAnalytics.assign('data.foo','bar');
         som4 = new Som(som1);
         assert(JSON.stringify(som1.get()) == JSON.stringify(som4.get()),'should be similar') 
     })
@@ -469,6 +469,153 @@ describe('deep merging arrays with function',()=>{
         newSom.mergeDeep("a", {filters:[()=>3]})
         assert(typeof newSom.get('a.filters.2') == "function",'should be a function');
         assert(newSom.get('a.filters').length == 3,'should be a function');
+    })
+})
+
+describe('circular reference handling', () => {
+ 
+    /**
+     * Simulates a data layer object that references itself — a common pattern in
+     * browser environments where a top-level object is attached back onto one of its own child nodes.
+     *
+     * Without the WeakSet guard these tests would hang / stack-overflow. With the
+     * fix they should complete and return correct results.
+     */
+ 
+    test('replace: does not infinite-loop on a self-referencing object', () => {
+        // obj.self === obj  →  direct self-reference
+        const obj = { brand: 'Adobe', model: 'Analytics' };
+        obj.self = obj;
+        const s = new Som(obj, { deepcopy: false });
+ 
+        // Should complete without throwing / hanging
+        expect(() => s.replace('Adobe', 'Other')).not.toThrow();
+ 
+        // The value that existed in the normal part of the tree must be replaced
+        expect(s.get('brand')).toBe('Other');
+        // Untouched value must remain
+        expect(s.get('model')).toBe('Analytics');
+    })
+
+    test('replace: Som instance assigned as value — correct variable name fixes the ReferenceError', () => {
+        // This is the corrected version of the original snippet with `s` renamed
+        // to `mysom` consistently.
+        const obj = { brand: 'Adobe', model: 'Analytics', som: undefined };
+        const mysom = new Som(obj, { deepcopy: false });
+        mysom.assign('som', mysom);
+ 
+        // Correct variable — must not throw
+        expect(() => mysom.replace('Adobe', 'Other')).not.toThrow();
+ 
+        expect(mysom.get('brand')).toBe('Other');
+        expect(mysom.get('model')).toBe('Analytics');
+    })
+ 
+ 
+    test('replace: does not infinite-loop on a nested circular reference', () => {
+        // child.parent === root  →  ancestor back-reference (common in DOM-like trees)
+        const root = { section: 'home', meta: { author: 'home', level: 'top' } };
+        root.meta.parent = root; // nested node points back to root
+        const s = new Som(root, { deepcopy: false });
+ 
+        expect(() => s.replace('home', 'away')).not.toThrow();
+ 
+        // Both occurrences of 'home' in the acyclic part of the tree must be replaced
+        expect(s.get('section')).toBe('away');
+        expect(s.get('meta.author')).toBe('away');
+        // Unrelated value must be untouched
+        expect(s.get('meta.level')).toBe('top');
+    })
+ 
+    test('replace: does not infinite-loop on a circular reference inside an array', () => {
+        // An object inside an array that references the root — another real-world pattern
+        const root = { items: [{ label: 'target', value: 1 }] };
+        root.items[0].container = root; // array element points back to root
+        const s = new Som(root, { deepcopy: false });
+ 
+        expect(() => s.replace('target', 'replaced')).not.toThrow();
+ 
+        expect(s.get('items.0.label')).toBe('replaced');
+        expect(s.get('items.0.value')).toBe(1);
+    })
+ 
+    test('replace with regex: does not infinite-loop on a self-referencing object', () => {
+        const obj = { label: 'foo_bar', other: 'baz' };
+        obj.self = obj;
+        const s = new Som(obj, { deepcopy: false });
+ 
+        expect(() => s.replace('foo_.*', 'replaced', true)).not.toThrow();
+ 
+        expect(s.get('label')).toBe('replaced');
+        expect(s.get('other')).toBe('baz');
+    })
+ 
+    test('replace: normal (non-circular) behaviour is unchanged', () => {
+        // Sanity-check that the WeakSet guard does not affect the happy path
+        const s = new Som({ a: 'old', b: { c: 'old', d: 'keep' }, arr: ['old', 'keep'] });
+        s.replace('old', 'new');
+ 
+        expect(s.get('a')).toBe('new');
+        expect(s.get('b.c')).toBe('new');
+        expect(s.get('b.d')).toBe('keep');
+        expect(s.get('arr.0')).toBe('new');
+        expect(s.get('arr.1')).toBe('keep');
+    })
+ 
+    test('searchValue: does not infinite-loop on a self-referencing object', () => {
+        const obj = { section: 'home', title: 'home' };
+        obj.self = obj;
+        const s = new Som(obj, { deepcopy: false });
+ 
+        let result;
+        expect(() => { result = s.searchValue('home'); }).not.toThrow();
+ 
+        // Both paths in the acyclic part of the tree must be found
+        expect(result['home']).toContain('section');
+        expect(result['home']).toContain('title');
+        // The circular reference must NOT produce duplicate/phantom paths
+        expect(result['home'].length).toBe(2);
+    })
+ 
+    test('searchValue: does not infinite-loop on a nested circular reference', () => {
+        const root = { page: { name: 'target', env: 'prod' }, site: 'target' };
+        root.page.parent = root; // nested back-reference
+        const s = new Som(root, { deepcopy: false });
+ 
+        let result;
+        expect(() => { result = s.searchValue('target'); }).not.toThrow();
+ 
+        expect(result['target']).toContain('page.name');
+        expect(result['target']).toContain('site');
+        expect(result['target'].length).toBe(2);
+    })
+ 
+    test('searchValue with regex: does not infinite-loop on a self-referencing object', () => {
+        const obj = { brand: 'Adobe_Analytics', model: 'Adobe_X5', other: 'unrelated' };
+        obj.self = obj;
+        const s = new Som(obj, { deepcopy: false });
+ 
+        let result;
+        expect(() => { result = s.searchValue('Adobe_.*', true); }).not.toThrow();
+ 
+        expect(result['Adobe_.*']).toContain('brand');
+        expect(result['Adobe_.*']).toContain('model');
+        expect(result['Adobe_.*'].length).toBe(2);
+    })
+ 
+    test('searchValue: normal (non-circular) behaviour is unchanged', () => {
+        // Sanity-check that the WeakSet guard does not affect the happy path
+        const s = new Som({
+            a: 'val',
+            b: { c: 'val', d: 'other' },
+            arr: [{ key: 'val' }, { key: 'skip' }]
+        });
+        const result = s.searchValue('val');
+ 
+        expect(result['val']).toContain('a');
+        expect(result['val']).toContain('b.c');
+        expect(result['val']).toContain('arr.0.key');
+        expect(result['val'].length).toBe(3);
     })
 })
 

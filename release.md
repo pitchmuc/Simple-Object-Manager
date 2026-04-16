@@ -3,6 +3,9 @@
 This page will provide all the release note when a version or subversion of the library has been pushed.
 This is keeping tracked of the release since version 0.1.0.
 
+## v 1.0.4
+* adding `WeakSet` capability in `replace` and `searchValue` methods to avoid infinte loop when trying to replace or search a value that is in the same object as the one we are trying to replace or search. It was causing an infinite loop and crashing the application. Now it will return the original value if it is in the same object as the one we are trying to replace or search.
+
 ## v 1.0.3
 * fix edge case when data returned are `0` or fallback is `0`. It was returning undefined.
 
