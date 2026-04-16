@@ -771,9 +771,10 @@ class Som{
      * @param {bool} regex if the old value is a regular expression. It will match
      * @param {object} data in the recursion, passing the data attribute 
      * @param {string} origin if the method is used recursively
+     * @param {WeakSet} seen WeakSet used internally to detect and break circular references
      * @returns undefined
      */
-    replace(o_v,n_v,regex=false,data,origin){
+    replace(o_v,n_v,regex=false,data,origin,seen){
         if(this.stack && Array.isArray(this.stack) && origin !='internal'){
             let data = {'method':'replace'}
             if(this.options.context != undefined){ /* if something has been provided in the context options */
@@ -781,7 +782,16 @@ class Som{
             }
             this.stack.push(data)
         }
+        /* Create a fresh WeakSet on the initial (non-recursive) call so that every
+           object node visited is tracked. Recursive calls reuse the same set, which
+           lets us detect and silently skip any back-reference without breaking the
+           normal traversal of legitimately shared sub-trees. */
+        if(!seen){ seen = new WeakSet(); }
         let o = data || this.data; // argument used for recursion
+        /* Guard: if we have already visited this object, it is a circular reference –
+           skip it entirely to avoid an infinite loop. */
+        if(seen.has(o)){ return undefined; }
+        seen.add(o);
         let myregexTest;
         if (regex){
             myregexTest = new RegExp(o_v)
@@ -821,7 +831,7 @@ class Som{
                         else{
                             o[k].forEach(function(el){
                                 if(typeof el == "object"){/* ensuring only object can enter recursion */
-                                    t.replace(o_v,n_v,regex,el,'internal')
+                                    t.replace(o_v,n_v,regex,el,'internal',seen)
                                 }
                         })
                         }
@@ -845,7 +855,7 @@ class Som{
                     }
                     else{
                         if(o[k] != undefined && typeof o[k]!= "undefined" && !(o[k] instanceof Som)){/* ensuring no undefined is being sent */
-                            this.replace(o_v,n_v,regex,o[k],'internal')
+                            this.replace(o_v,n_v,regex,o[k],'internal',seen)
                         }
                         else{
                             return undefined
@@ -865,10 +875,18 @@ class Som{
      * @param {object} d the object used in the recursion
      * @param {array} paths the array containing the paths found
      * @param {string} curr_path the current path built
+     * @param {string} origin origin of the call
+     * @param {WeakSet} seen WeakSet used internally to detect and break circular references
      * @returns an object with the list of paths that contains that value
      */
-    searchValue(value,regex=false,d,paths=undefined,curr_path=undefined,origin){
+    searchValue(value,regex=false,d,paths=undefined,curr_path=undefined,origin,seen){
+        /* Create a fresh WeakSet on the initial call; reuse it on recursive calls. */
+        if(!seen){ seen = new WeakSet(); }
         let o = d || this.data; // argument used for recursion
+        /* Guard: skip objects we have already visited to prevent infinite loops on
+           circular references (e.g. objects that reference themselves or their ancestors). */
+        if(seen.has(o)){ return {[value]: paths||[]}; }
+        seen.add(o);
         let cp = curr_path == undefined?"":curr_path;
         let ps = paths==undefined?[]:paths;
         let myregexTest;
@@ -935,14 +953,14 @@ class Som{
                         for(let i=0;i<o[k].length;i++){
                             if(typeof o[k][i] == "object"){/* ensuring only object can enter recursion */
                                 let tmp_cp = cp==""?k+'.'+i:cp+'.'+k+'.'+i;
-                                this.searchValue(value,regex,o[k][i],ps,tmp_cp,'internal')
+                                this.searchValue(value,regex,o[k][i],ps,tmp_cp,'internal',seen)
                             }
                         }
                     }
                 }
                 else if(typeof o[k] == 'object'){
                     let tmp_cp = cp==""?k:cp+'.'+k;
-                    this.searchValue(value,regex,o[k],ps,tmp_cp,'internal')
+                    this.searchValue(value,regex,o[k],ps,tmp_cp,'internal',seen)
                 }
             }
         }
