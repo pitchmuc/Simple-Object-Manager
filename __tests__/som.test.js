@@ -1,6 +1,20 @@
 const assert = require("assert");
 const Som = require("../src/Som.js");
 
+function withSilencedWarn(fn){
+    const orig = console.warn;
+    const captured = [];
+    console.warn = (...args) => { captured.push(args.join(' ')); };
+    try { fn(captured); }
+    finally { console.warn = orig; }
+}
+
+/* Remove any key we may have attempted to add to Object.prototype, so a
+ * failure in one test doesn't cascade into every subsequent test. */
+function cleanProto(...keys){
+    for (const k of keys){ delete Object.prototype[k]; }
+}
+
 describe('initialize SOM with empty object and simple assign',()=>{
     test('Manipulating Som from empty object', async () => {
         let newSom = new Som();
@@ -619,15 +633,178 @@ describe('circular reference handling', () => {
     })
 })
 
+describe('prototype pollution - merge', ()=>{
+    test('merge with "__proto__" as path is rejected', async () => {
+        const dl = new Som({});
+        withSilencedWarn(()=> dl.merge('__proto__', {polluted_m1: true}));
+        assert(({}).polluted_m1 === undefined, 'Object.prototype must not be polluted');
+        cleanProto('polluted_m1');
+    });
 
-/** To be done - create an object reference
-describe('loading object',()=>{
-    test('using an object into SOM', async () => {
-        let newSom = new Som();
-        assert(newSom.get('page.pageInfo.sysEnv') == 'prod','should return prod')
-        assert(newSom.get('page.category.subCategory1') == 'content','should return content')
-        assert(newSom.get('page.category.subCategory10') == undefined,'should return undefined')
-        assert(newSom.get('page.category.subCategory10','none existing') == 'none existing','should return none existing')
-    })
-})
-*/
+    test('merge with "constructor" as path is rejected', async () => {
+        const dl = new Som({});
+        withSilencedWarn(()=> dl.merge('constructor', {polluted_m2: true}));
+        assert(({}).polluted_m2 === undefined, 'Object.prototype must not be polluted');
+        cleanProto('polluted_m2');
+    });
+
+    test('merge strips "__proto__" key from a root-level object payload', async () => {
+        const dl = new Som({});
+        const payload = JSON.parse('{"__proto__":{"polluted_m3":true}, "legit":"kept"}');
+        withSilencedWarn(()=> dl.merge(payload));
+        assert(({}).polluted_m3 === undefined, 'Object.prototype must not be polluted');
+        assert(dl.get('legit') === 'kept', 'non-dangerous keys must still merge');
+        cleanProto('polluted_m3');
+    });
+
+    test('merge strips "constructor" key from a root-level object payload', async () => {
+        const dl = new Som({});
+        const payload = {constructor: {prototype: {polluted_m4: true}}, legit: 'kept'};
+        withSilencedWarn(()=> dl.merge(payload));
+        assert(({}).polluted_m4 === undefined, 'Object.prototype must not be polluted');
+        assert(dl.get('legit') === 'kept', 'non-dangerous keys must still merge');
+        /* data.constructor should remain the native Object constructor, not our injection */
+        assert(typeof dl.data.constructor === 'function', 'constructor must not be overwritten');
+        cleanProto('polluted_m4');
+    });
+
+    test('merge emits a console.warn when an unsafe key is dropped', async () => {
+        const dl = new Som({});
+        let captured;
+        withSilencedWarn(c => {
+            dl.merge('__proto__', {x: 1});
+            captured = c.slice();
+        });
+        assert(captured.length >= 1, 'console.warn should have been called');
+        assert(captured[0].includes('__proto__'), 'warning should mention the key');
+        assert(captured[0].includes('Som.merge'), 'warning should identify the method');
+    });
+});
+
+describe('prototype pollution - mergeDeep', ()=>{
+    test('mergeDeep with "__proto__" as path is rejected', async () => {
+        const dl = new Som({});
+        withSilencedWarn(()=> dl.mergeDeep('__proto__', {polluted_md1: true}));
+        assert(({}).polluted_md1 === undefined, 'Object.prototype must not be polluted');
+        cleanProto('polluted_md1');
+    });
+
+    test('mergeDeep skips "__proto__" key nested inside a payload', async () => {
+        const dl = new Som({a: {b: {}}});
+        withSilencedWarn(()=> dl.mergeDeep({a: {b: {'__proto__': {polluted_md2: true}, safe: 'ok'}}}));
+        assert(({}).polluted_md2 === undefined, 'Object.prototype must not be polluted');
+        /* The safe sibling key should still be merged */
+        assert(dl.get('a.b.safe') === 'ok', 'non-dangerous sibling keys must still merge');
+        cleanProto('polluted_md2');
+    });
+
+    test('mergeDeep skips "constructor.prototype" chain in payload', async () => {
+        const dl = new Som({});
+        withSilencedWarn(()=> dl.mergeDeep({constructor: {prototype: {polluted_md3: true}}}));
+        assert(({}).polluted_md3 === undefined, 'Object.prototype must not be polluted');
+        cleanProto('polluted_md3');
+    });
+
+    test('mergeDeep skips "__proto__" from a JSON-parsed payload (own property)', async () => {
+        const dl = new Som({});
+        const payload = JSON.parse('{"__proto__":{"polluted_md4":true}, "legit":"kept"}');
+        withSilencedWarn(()=> dl.mergeDeep(payload));
+        assert(({}).polluted_md4 === undefined, 'Object.prototype must not be polluted');
+        assert(dl.get('legit') === 'kept', 'non-dangerous keys must still merge');
+        cleanProto('polluted_md4');
+    });
+});
+
+describe('prototype pollution - assign', ()=>{
+    test('assign with a "__proto__" segment in the path is rejected', async () => {
+        const dl = new Som({});
+        withSilencedWarn(()=> dl.assign('__proto__.polluted_a1', true));
+        assert(({}).polluted_a1 === undefined, 'Object.prototype must not be polluted');
+        cleanProto('polluted_a1');
+    });
+
+    test('assign with a "constructor.prototype" segment in the path is rejected', async () => {
+        const dl = new Som({});
+        withSilencedWarn(()=> dl.assign('constructor.prototype.polluted_a2', true));
+        assert(({}).polluted_a2 === undefined, 'Object.prototype must not be polluted');
+        cleanProto('polluted_a2');
+    });
+
+    test('assign with a "prototype" segment in the path is rejected', async () => {
+        const dl = new Som({});
+        withSilencedWarn(()=> dl.assign('prototype.polluted_a3', true));
+        assert(({}).polluted_a3 === undefined, 'Object.prototype must not be polluted');
+        cleanProto('polluted_a3');
+    });
+
+    test('assign with an unsafe segment anywhere in the path is rejected', async () => {
+        const dl = new Som({});
+        withSilencedWarn(()=> dl.assign('a.b.__proto__.c', true));
+        /* "a" should NOT have been created since we bail before touching data */
+        assert(dl.get('a') === undefined, 'path creation must be aborted on unsafe segment');
+    });
+
+    test('assign object-form strips unsafe keys', async () => {
+        const dl = new Som({});
+        const payload = JSON.parse('{"__proto__":{"polluted_a5":true}, "legit":"kept"}');
+        withSilencedWarn(()=> dl.assign(payload));
+        assert(({}).polluted_a5 === undefined, 'Object.prototype must not be polluted');
+        assert(dl.get('legit') === 'kept', 'non-dangerous keys must still assign');
+        cleanProto('polluted_a5');
+    });
+});
+
+describe('prototype pollution - push', ()=>{
+    test('push with "__proto__" as path is rejected', async () => {
+        const dl = new Som({});
+        withSilencedWarn(()=> dl.push('__proto__', 'x'));
+        /* Array index 0 on Object.prototype would manifest as ({})[0] */
+        assert(({})[0] === undefined, 'Object.prototype must not be polluted');
+    });
+
+    test('push with an unsafe segment anywhere in the path is rejected', async () => {
+        const dl = new Som({});
+        withSilencedWarn(()=> dl.push('a.__proto__.b', 'x'));
+        assert(dl.get('a') === undefined, 'path creation must be aborted on unsafe segment');
+    });
+});
+
+describe('prototype pollution - operation is not recorded in stack', ()=>{
+    test('rejected merge does not add an entry to the stack', async () => {
+        const dl = new Som({}, {stack: true});
+        withSilencedWarn(()=> dl.merge('__proto__', {x: 1}));
+        assert(dl.stack.length === 0, 'rejected operations must not pollute the stack');
+    });
+
+    test('rejected assign does not add an entry to the stack', async () => {
+        const dl = new Som({}, {stack: true});
+        withSilencedWarn(()=> dl.assign('__proto__.x', 1));
+        assert(dl.stack.length === 0, 'rejected operations must not pollute the stack');
+    });
+
+    test('legitimate operations still record normally after a rejected one', async () => {
+        const dl = new Som({}, {stack: true});
+        withSilencedWarn(()=> dl.merge('__proto__', {x: 1}));
+        dl.assign('a.b', 'value');
+        assert(dl.stack.length === 1, 'legitimate op should still record');
+        assert(dl.stack[0].method === 'assign', 'stack should only contain the legit op');
+    });
+});
+
+describe('prototype pollution - prior pollution does not leak back in', ()=>{
+    test('a new Som does not inherit polluted keys through get', async () => {
+        /* Simulate an out-of-band pollution (e.g. from another library). */
+        Object.prototype.evilLeak = 'hacked';
+        try {
+            const dl = new Som({});
+            /* get with no path returns the data object directly, and "evilLeak"
+             * is on the prototype chain of every object. This test documents
+             * current behavior: get() returns the data object, and hasOwnProperty
+             * on data should be false for evilLeak even though access works. */
+            assert(Object.prototype.hasOwnProperty.call(dl.data, 'evilLeak') === false,
+                'data must not have an own "evilLeak" property');
+        } finally {
+            cleanProto('evilLeak');
+        }
+    });
+});

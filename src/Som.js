@@ -1,4 +1,46 @@
 'use strict';
+
+/** Keys that must never be written to or traversed into, to prevent prototype
+ *  pollution. `__proto__` is the direct prototype accessor; `constructor` and
+ *  `prototype` block chains like `constructor.prototype.isAdmin`.
+ */
+const DANGEROUS_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+
+/** Returns true when the given key is unsafe to write or recurse into.
+ *  @param {*} key
+ *  @returns {boolean}
+ */
+function isUnsafeKey(key){
+    return typeof key === 'string' && DANGEROUS_KEYS.has(key);
+}
+
+/** Returns a shallow copy of `obj` with any dangerous keys stripped.
+ *  If no dangerous keys are present, returns the original reference.
+ *  Emits a single console.warn listing the keys dropped.
+ *  @param {object} obj
+ *  @param {string} method name of the Som method, used in the warning
+ *  @returns {object}
+ */
+function stripUnsafeKeys(obj, method){
+    if (obj === null || typeof obj !== 'object' || Array.isArray(obj)){
+        return obj;
+    }
+    let dropped = null;
+    for (const k of Object.keys(obj)){
+        if (isUnsafeKey(k)){
+            if (dropped === null){ dropped = []; }
+            dropped.push(k);
+        }
+    }
+    if (dropped === null){ return obj; }
+    console.warn(`[Som.${method}] skipping unsafe key(s): ${dropped.join(', ')}`);
+    const clean = {};
+    for (const k of Object.keys(obj)){
+        if (!isUnsafeKey(k)){ clean[k] = obj[k]; }
+    }
+    return clean;
+}
+
 class Som{
     /**
      * 
@@ -203,6 +245,17 @@ class Som{
         let origin = typeof(params)=='object'?params.origin:params;
         let override = typeof(params)=='object'?params.override:params=='override'?true:false;
         let type = typeof(params)=='object'?params.type:Object;
+        /* Block dangerous path segments BEFORE stack logging or mutation so
+         * rejected operations leave no trace. */
+        if (typeof path == "string" && path != ""){
+            const segments = path.split('.');
+            for (const seg of segments){
+                if (isUnsafeKey(seg)){
+                    console.warn(`[Som.assign] skipping unsafe path segment: ${seg}`);
+                    return this.data;
+                }
+            }
+        }
         if(this.stack && Array.isArray(this.stack) && origin !='internal' && origin != 'override'){
             let data = {"method":"assign","path" : path}
             data['method'] == origin == 'modify'?"modify":"assign";
@@ -459,7 +512,7 @@ class Som{
             }
         }
         else if (typeof path == "object" ){
-            this.data = Object.assign(this.data,path)
+            this.data = Object.assign(this.data,stripUnsafeKeys(path,'assign'))
         }
         return this.data
     }
@@ -485,6 +538,19 @@ class Som{
             path = object;
             object = tmp_object
         }
+        /* Block dangerous path segments and strip dangerous keys from the
+         * object being merged. Done before stack logging so unsafe ops are
+         * not recorded. */
+        if (typeof path == "string" && path != ""){
+            const segments = path.split('.');
+            for (const seg of segments){
+                if (isUnsafeKey(seg)){
+                    console.warn(`[Som.merge] skipping unsafe path segment: ${seg}`);
+                    return this.data;
+                }
+            }
+        }
+        object = stripUnsafeKeys(object,'merge');
         if(this.stack && Array.isArray(this.stack)){
             let data = {'method':'merge','path' : path}
             if(this.options.context != undefined){ /* if something has been provided in the context options */
@@ -631,6 +697,16 @@ class Som{
      * @returns return the whole data with that new elements.
      */
     push(path, v,o=false){
+        /* Block dangerous path segments before stack logging or mutation. */
+        if (typeof path === "string" && path != ""){
+            const segments = path.split('.');
+            for (const seg of segments){
+                if (isUnsafeKey(seg)){
+                    console.warn(`[Som.push] skipping unsafe path segment: ${seg}`);
+                    return this.data;
+                }
+            }
+        }
         if(this.stack && Array.isArray(this.stack) && origin !='internal'){
             let data = {'method':'push','path' : path}
             if(this.options.context != undefined){ /* if something has been provided in the context options */
@@ -672,6 +748,16 @@ class Som{
      * It doesn't return anything and replace the current Som object.
      */
     mergeDeep(path,o,s,origin){
+        /* Block dangerous path segments before anything else. */
+        if (typeof path === "string" && path != ""){
+            const segments = path.split('.');
+            for (const seg of segments){
+                if (isUnsafeKey(seg)){
+                    console.warn(`[Som.mergeDeep] skipping unsafe path segment: ${seg}`);
+                    return undefined;
+                }
+            }
+        }
         if(typeof path === "string"){ /* if path is provided */
             if (Array.isArray(o)){
                 o = Array.from(o)
@@ -708,6 +794,10 @@ class Som{
         }
         if (!Array.isArray(o)){
             for (let key in o){
+                if (isUnsafeKey(key)){
+                    console.warn(`[Som.mergeDeep] skipping unsafe key: ${key}`);
+                    continue;
+                }
                 if(typeof o[key] !== "object"){ /** Element provided is simple */
                     mNO[key] = o[key]
                 }
@@ -771,10 +861,9 @@ class Som{
      * @param {bool} regex if the old value is a regular expression. It will match
      * @param {object} data in the recursion, passing the data attribute 
      * @param {string} origin if the method is used recursively
-     * @param {WeakSet} seen WeakSet used internally to detect and break circular references
      * @returns undefined
      */
-    replace(o_v,n_v,regex=false,data,origin,seen){
+    replace(o_v,n_v,regex=false,data,origin,visited){
         if(this.stack && Array.isArray(this.stack) && origin !='internal'){
             let data = {'method':'replace'}
             if(this.options.context != undefined){ /* if something has been provided in the context options */
@@ -782,21 +871,21 @@ class Som{
             }
             this.stack.push(data)
         }
-        /* Create a fresh WeakSet on the initial (non-recursive) call so that every
-           object node visited is tracked. Recursive calls reuse the same set, which
-           lets us detect and silently skip any back-reference without breaking the
-           normal traversal of legitimately shared sub-trees. */
-        if(!seen){ seen = new WeakSet(); }
         let o = data || this.data; // argument used for recursion
-        /* Guard: if we have already visited this object, it is a circular reference –
-           skip it entirely to avoid an infinite loop. */
-        if(seen.has(o)){ return undefined; }
-        seen.add(o);
+        /* Track objects already visited in this traversal so circular
+         * references (e.g. obj.self === obj) don't cause infinite recursion.
+         * The WeakSet is created on the top-level call and threaded through
+         * every recursive call. */
+        let seen = visited || new WeakSet();
         let myregexTest;
         if (regex){
             myregexTest = new RegExp(o_v)
         }
-        if(typeof o == 'object'){
+        if(typeof o == 'object' && o !== null){
+            if (seen.has(o)){
+                return undefined; /* already visited → bail to avoid infinite loop */
+            }
+            seen.add(o);
             for(let k in o){
                 if(typeof o[k] !== "object"){
                     if (regex){
@@ -875,25 +964,26 @@ class Som{
      * @param {object} d the object used in the recursion
      * @param {array} paths the array containing the paths found
      * @param {string} curr_path the current path built
-     * @param {string} origin origin of the call
-     * @param {WeakSet} seen WeakSet used internally to detect and break circular references
      * @returns an object with the list of paths that contains that value
      */
-    searchValue(value,regex=false,d,paths=undefined,curr_path=undefined,origin,seen){
-        /* Create a fresh WeakSet on the initial call; reuse it on recursive calls. */
-        if(!seen){ seen = new WeakSet(); }
+    searchValue(value,regex=false,d,paths=undefined,curr_path=undefined,origin,visited){
         let o = d || this.data; // argument used for recursion
-        /* Guard: skip objects we have already visited to prevent infinite loops on
-           circular references (e.g. objects that reference themselves or their ancestors). */
-        if(seen.has(o)){ return {[value]: paths||[]}; }
-        seen.add(o);
         let cp = curr_path == undefined?"":curr_path;
         let ps = paths==undefined?[]:paths;
+        /* Track visited objects so circular references don't cause infinite
+         * recursion. Created on the top-level call, threaded through every
+         * recursive call. */
+        let seen = visited || new WeakSet();
         let myregexTest;
         if (regex){
             myregexTest = new RegExp(value)
         }
-        if(typeof o =='object'){
+        if(typeof o =='object' && o !== null){
+            if (seen.has(o)){
+                /* already visited → don't recurse further. Still return the
+                 * in-progress dataResult below so callers get consistent shape. */
+            } else {
+                seen.add(o);
             for(let k in o){
                 if(typeof o[k]!= 'object'){
                     if(regex){
@@ -963,6 +1053,7 @@ class Som{
                     this.searchValue(value,regex,o[k],ps,tmp_cp,'internal',seen)
                 }
             }
+            } /* close the "not seen" else */
         }
         let dataResult = {}
         dataResult[value] = ps
