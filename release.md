@@ -4,7 +4,8 @@ This page will provide all the release note when a version or subversion of the 
 This is keeping tracked of the release since version 0.1.0.
 
 ## v 1.0.5
-Protecting Som from prototype injection for assign, merge and mergeDeep methods.
+* Protecting Som from prototype injection for assign, merge and mergeDeep methods.
+* Preventing recursive loop on circular reference of older objects self referencing themselves.
 
 ## v 1.0.4
 * adding `WeakSet` capability in `replace` and `searchValue` methods to avoid infinte loop when trying to replace or search a value that is in the same object as the one we are trying to replace or search. It was causing an infinite loop and crashing the application. Now it will return the original value if it is in the same object as the one we are trying to replace or search.
