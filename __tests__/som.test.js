@@ -57,6 +57,12 @@ describe('Testing the GET capabilities', ()=>{
         expect(newSom.get('my.set.2')).toBe(true);
         expect(newSom.get('my.array.2',undefined,{arraycheck:true})).toBe(true);
     })
+    test('Multiple paths preserve falsy values from the first matching path',async()=>{
+        expect(new Som({a: 0, b: 2}).get(['a','b'])).toBe(0);
+        expect(new Som({a: false, b: true}).get(['a','b'])).toBe(false);
+        expect(new Som({a: '', b: 'fallback'}).get(['a','b'])).toBe('');
+        expect(new Som({a: null, b: 'fallback'}).get(['a','b'])).toBeNull();
+    })
 })
 
 describe('Override field with structure',()=>{
@@ -294,6 +300,13 @@ describe('Replacing values',()=>{
         expect(newSom.get('my.array').includes('new1')).toBe(true);
         expect(newSom.get('my.array').includes('new2')).toBe(true);
     })
+    test('Replacing skips null values without stopping sibling traversal',async() => {
+        const newSom = new Som({a: null, b: 'old', c: {d: 'old'}});
+        newSom.replace('old','new');
+        expect(newSom.get('a')).toBeNull();
+        expect(newSom.get('b')).toBe('new');
+        expect(newSom.get('c.d')).toBe('new');
+    })
 })
 
 describe('Merge tests values',()=>{
@@ -322,6 +335,12 @@ describe('Merge tests values',()=>{
         assert(newSom.get('data.array1').length ==3,'possess now 3 values')
         newSom.mergeDeep('data',{'array1':[4,5,6]});
         assert(newSom.get('data.array1').length ==6,'possess now 6 values')
+    })
+    test('Deep merge treats null as a terminal value', async () => {
+        const newSom = new Som({data:{object:{nested:true}, keep:'value'}});
+        newSom.mergeDeep('data', {object:null});
+        expect(newSom.get('data.object')).toBeNull();
+        expect(newSom.get('data.keep')).toBe('value');
     })
 })
 
@@ -356,6 +375,19 @@ describe('modify',()=> {
         dl.modify("page.pageInfo.value", it => it + 1)
         expect(dl.get("page.pageInfo.value")).toBe(4)
     })
+    test('calls the modifier once and records the assigned value in the stack', async () => {
+        let calls = 0;
+        const dl = new Som({ page: { value: 3 }}, {stack:true, context: o => ({value:o.value})});
+        dl.modify("page.value", it => {
+            calls += 1;
+            return it + 1;
+        })
+        expect(calls).toBe(1);
+        expect(dl.get("page.value", undefined, {origin:'internal'})).toBe(4);
+        expect(dl.stack.length).toBe(1);
+        expect(dl.stack[0].method).toBe('modify');
+        expect(dl.stack[0].context.value).toBe(4);
+    })
 })
 
 describe('search tests',()=>{
@@ -374,6 +406,34 @@ describe('search tests',()=>{
         assert(results['value1'].includes("data.array1.0") ,'the array paths should be found');
         results = newSom.searchValue('value2')
         assert(results['value2'].includes("data.array2.0.foo") ,'the array paths should be found');
+    })
+})
+
+describe('own-property traversal',()=>{
+    test('replace ignores inherited enumerable properties', async () => {
+        const obj = Object.create({ inherited: 'old' });
+        obj.own = 'old';
+        const newSom = new Som(obj, {deepcopy:false});
+        newSom.replace('old', 'new');
+        expect(newSom.get('own')).toBe('new');
+        expect(Object.prototype.hasOwnProperty.call(newSom.get(), 'inherited')).toBe(false);
+    })
+
+    test('searchValue ignores inherited enumerable properties', async () => {
+        const obj = Object.create({ inherited: 'target' });
+        obj.own = 'target';
+        const newSom = new Som(obj, {deepcopy:false});
+        const results = newSom.searchValue('target');
+        expect(results['target']).toEqual(['own']);
+    })
+
+    test('mergeDeep ignores inherited enumerable properties from payloads', async () => {
+        const payload = Object.create({ inherited: 'bad' });
+        payload.own = 'good';
+        const newSom = new Som({});
+        newSom.mergeDeep(payload);
+        expect(newSom.get('own')).toBe('good');
+        expect(newSom.get('inherited')).toBeUndefined();
     })
 })
 
@@ -458,6 +518,11 @@ describe('merging unknown path',()=>{
         newSom.merge({'newpath':'value'})
         assert(newSom.get('data.z.value') == 'bzr','should be undefined');
         assert(newSom.get('newpath') == 'value', "should be undefined")
+    })
+    test('merging a missing path works when a default value is configured',async()=>{
+        const newSom = new Som({}, {dv:'default'});
+        expect(() => newSom.merge('missing', {value:'created'})).not.toThrow();
+        expect(newSom.get('missing.value')).toBe('created');
     })
 })
 
@@ -632,6 +697,40 @@ describe('circular reference handling', () => {
         expect(result['val'].length).toBe(3);
     })
 })
+
+describe('prototype pollution - traversal and lookup', ()=>{
+    test('constructor strips unsafe keys from JSON payloads', async () => {
+        const payload = JSON.parse('{"__proto__":{"polluted_ctor":true},"ok":1}');
+        let som;
+        withSilencedWarn(() => { som = new Som(payload); });
+        expect(som.get('ok')).toBe(1);
+        expect(som.get().polluted_ctor).toBeUndefined();
+        expect(Object.getPrototypeOf(som.get()).polluted_ctor).toBeUndefined();
+        cleanProto('polluted_ctor');
+    });
+
+    test('get rejects dangerous segments before traversing the prototype chain', async () => {
+        const som = new Som({ safe: { nested: true }, value: 'kept' });
+        withSilencedWarn(() => {
+            expect(som.get('__proto__.polluted')).toBeUndefined();
+            expect(som.get('constructor.prototype.polluted')).toBeUndefined();
+            expect(som.get('safe.__proto__.polluted')).toBeUndefined();
+        });
+        assert(({}).polluted === undefined, 'Object.prototype must not be reached by get()');
+        cleanProto('polluted');
+    });
+
+    test('remove rejects dangerous segments instead of deleting inherited properties', async () => {
+        const som = new Som({ safe: { nested: true } });
+        withSilencedWarn(() => {
+            expect(som.remove('constructor.prototype.polluted')).toBe(som.get());
+            expect(som.remove('__proto__.polluted')).toBe(som.get());
+            expect(som.remove('safe.__proto__.polluted')).toBe(som.get());
+        });
+        assert(({}).polluted === undefined, 'Object.prototype must not be mutated by remove()');
+        cleanProto('polluted');
+    });
+});
 
 describe('prototype pollution - merge', ()=>{
     test('merge with "__proto__" as path is rejected', async () => {

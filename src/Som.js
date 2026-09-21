@@ -14,6 +14,60 @@ function isUnsafeKey(key){
     return typeof key === 'string' && DANGEROUS_KEYS.has(key);
 }
 
+/** Returns true when any path segment is unsafe to traverse or mutate.
+ *  @param {string|string[]|undefined} path
+ *  @returns {boolean}
+ */
+function hasUnsafePathSegments(path){
+    if (typeof path !== 'string' || path === ''){
+        return false;
+    }
+    const segments = path.split('.');
+    for (const seg of segments){
+        if (isUnsafeKey(seg)){
+            return true;
+        }
+    }
+    return false;
+}
+
+/** Copies own enumerable properties while skipping keys that can mutate object
+ *  prototypes. Unlike Object.assign({}, source), this cannot trigger the
+ *  __proto__ setter on the target object.
+ *  @param {object} target
+ *  @param {object} source
+ *  @param {string} method
+ *  @returns {object}
+ */
+function copySafeOwnProperties(target, source, method){
+    if (source === null || typeof source !== 'object'){
+        return target;
+    }
+    let dropped = null;
+    for (const k of Object.keys(source)){
+        if (isUnsafeKey(k)){
+            if (dropped === null){ dropped = []; }
+            dropped.push(k);
+        }
+        else{
+            target[k] = source[k];
+        }
+    }
+    if (dropped !== null){
+        console.warn(`[Som.${method}] skipping unsafe key(s): ${dropped.join(', ')}`);
+    }
+    return target;
+}
+
+/** Returns a safe shallow copy of an object.
+ *  @param {object} obj
+ *  @param {string} method
+ *  @returns {object}
+ */
+function safeShallowCopy(obj, method){
+    return copySafeOwnProperties({}, obj, method);
+}
+
 /** Returns a shallow copy of `obj` with any dangerous keys stripped.
  *  If no dangerous keys are present, returns the original reference.
  *  Emits a single console.warn listing the keys dropped.
@@ -53,25 +107,13 @@ class Som{
     */
     constructor(object,options={dv:undefined,deepcopy:true,stack:false,context:undefined}) {
         this.data = {};
-        this.version = "1.0.5";
+        this.version = "1.1.0";
         this.deepcopy = options.deepcopy==undefined?true:options.deepcopy;
         this.defaultvalue = typeof arguments[1]=='string'?arguments[1]:options.dv; /* legacy backward compatibility with df parameter*/
         if(options.stack){
            this.stack = [];
            this.options = {"context":options.context}
         }
-        function getCircularReplacer(){
-            const seen = new WeakSet();
-            return (key, value) => {
-              if (typeof value === 'object' && value !== null) {
-                if (seen.has(value)) {
-                  return;
-                }
-                seen.add(value);
-              }
-              return value;
-            };
-          };
         if (typeof(object) == 'object' && (object instanceof Som) == false){
             if(Array.isArray(object) && object.length > 0){
                 let reference = this.data;
@@ -80,21 +122,21 @@ class Som{
                     object.forEach(function(element){
                         if(t.deepcopy){
                             try{
-                                reference = Object.assign(reference,element);
+                                reference = copySafeOwnProperties(reference,element,'constructor');
                             }
                             catch(e){
                                 console.warn('issue assigning object, trying removing circular references.');
-                                reference = Object.assign(reference,element,getCircularReplacer());
+                                reference = copySafeOwnProperties(reference,element,'constructor');
                             }    
                         }
                         else{
-                            reference = Object.assign(reference,element)
+                            reference = copySafeOwnProperties(reference,element,'constructor')
                         }
                     })
                 }
                 else{
                     if(this.deepcopy){
-                        this.data = Object.assign({}, object);
+                        this.data = safeShallowCopy(object,'constructor');
                     }
                     else{
                         this.data = object
@@ -105,21 +147,21 @@ class Som{
             else{
                 try{
                     if(this.deepcopy && (arguments[2] !=false)){ //arguments[2] is legacy backward compatibility
-                        this.data = Object.assign({}, object);
+                        this.data = safeShallowCopy(object,'constructor');
                     }else{
                         this.data = object;
                     }
                 }
                 catch(e){
                     console.warn('issue assigning object, trying removing circular references.');
-                    this.data = Object.assign({},object,getCircularReplacer());
+                    this.data = safeShallowCopy(object,'constructor');
                 }
             }
         }
         else if (typeof(object) == 'object' && (object instanceof Som) == true){
             try{
                 if(this.deepcopy){
-                    this.data = Object.assign({},object.data);
+                    this.data = safeShallowCopy(object.data,'constructor');
                 }else{
                     this.data = object.data
                 }
@@ -127,7 +169,7 @@ class Som{
             }
             catch(e){
                 console.warn('issue assigning object, trying removing circular references.');
-                this.data = Object.assign({},object.data,getCircularReplacer());
+                this.data = safeShallowCopy(object.data,'constructor');
             }
             
         }
@@ -160,13 +202,13 @@ class Som{
         else{
             paths = path
         }
-        let results = {}
-        for (const path of paths) {
-            results[path] = {'pathSplit':'','value':undefined};
-        }
+        let result = undefined;
+        let found = false;
         for (const path of paths){
             if (typeof(path) == "string"){
-                results[path]['pathSplit'] = path.split(".");
+                if (hasUnsafePathSegments(path)){
+                    continue;
+                }
                 let v = this.data;
                 let tmp_pathSplit = path.split(".");
                 for (var i = 0; i < tmp_pathSplit.length && v != undefined; i++) { // Traverse until found or undefined   
@@ -194,21 +236,24 @@ class Som{
                         }
                     } 
                     else if(Array.isArray(v) && Math.abs(parseInt(tmp_pathSplit[i]))>v.length){ // trying to access above # of elements
-                        v = fallback || this.defaultvalue || undefined
+                        v = undefined
                     }
                     else {
                         v = v[tmp_pathSplit[i]];
                     }
                 }
-                if (v === "" || (typeof v === 'undefined' && fallback == "")){
-                    results[path]['value'] = ""
+                if (typeof v !== 'undefined' || (typeof v === 'undefined' && fallback == "")){
+                    result = typeof v === 'undefined' && fallback == "" ? "" : v;
+                    found = true;
+                    break;
                 }
-                results[path]['value'] = v
                 }
             }
-        let result = ""
-        for (let res in results) {
-            result = result || results[res]['value']
+        if(!found){
+            result = this.defaultvalue;
+            if(typeof result === 'undefined'){
+                result = fallback;
+            }
         }
         if((typeof result == "undefined" && fallback === "") || result === "" || result === false || result === 0){ /* Taking care of falsy values */
             if(this.stack && Array.isArray(this.stack) && origin != 'internal'){
@@ -221,7 +266,7 @@ class Som{
             return result===false?result:result===0?0:''; /*handling false value and 0 and '' fallback that get overriden */
         }
         else{
-            let finalResult = result || this.defaultvalue || undefined || fallback
+            let finalResult = result
             if(this.stack && Array.isArray(this.stack) && origin != 'internal'){
                 let data = {'method':'get','path' : path}
                 if(this.options.context != undefined){ /* if something has been provided in the context options */
@@ -582,7 +627,7 @@ class Som{
                     v = v[pS[i]];
                 }
             }
-            if(typeof(v) != 'undefined' || v != this.defaultvalue){
+            if(typeof(v) != 'undefined' && v !== null && v != this.defaultvalue){
                 if (v instanceof Set && (object instanceof Array || object instanceof Set)){
                     object.forEach(function(element){
                         v.add(element);
@@ -617,13 +662,17 @@ class Som{
      * @param {string} path
      * @param {boolean} key
      */
-    remove(path,key){
+    remove(path,key,origin=undefined){
         if(this.stack && Array.isArray(this.stack) && origin !='internal'){
             let data = {'method':'remove','path' : path}
             if(this.options.context != undefined){ /* if something has been provided in the context options */
                 data['context'] = typeof this.options.context == "function"?this.options.context({"method":"remove","value":undefined}):this.options.context;
             }
             this.stack.push(data)
+        }
+        if (typeof path === 'string' && hasUnsafePathSegments(path)){
+            console.warn(`[Som.remove] skipping unsafe path segment: ${path.split('.').find(isUnsafeKey)}`);
+            return this.data;
         }
         if (typeof key == "undefined"){
             key = false;
@@ -696,7 +745,7 @@ class Som{
      * @param {*} o override. set to false by default. It means that any existing value in that path will be kept. if set to true, replacing the value of that path with an array with the value set. 
      * @returns return the whole data with that new elements.
      */
-    push(path, v,o=false){
+    push(path, v,o=false,origin=undefined){
         /* Block dangerous path segments before stack logging or mutation. */
         if (typeof path === "string" && path != ""){
             const segments = path.split('.');
@@ -763,7 +812,7 @@ class Som{
                 o = Array.from(o)
             }
             else{
-                o = Object.assign({}, o);
+                o = safeShallowCopy(o,'mergeDeep');
             }
             s = s || this.get(path,undefined,{origin:'internal'});
             if (typeof s == "undefined"){// create the path if it does not exist
@@ -778,10 +827,10 @@ class Som{
                 o = Array.from(path)
             }
             else{
-                o = Object.assign({}, path);
+                o = safeShallowCopy(path,'mergeDeep');
             }
         }
-        if (typeof o !== 'object'){
+        if (typeof o !== 'object' || o === null){
             throw new Error('expect an object as input')
         }
         let mNO = s || this.data; // my new object
@@ -793,16 +842,16 @@ class Som{
             this.stack.push(data)
         }
         if (!Array.isArray(o)){
-            for (let key in o){
+            for (let key of Object.keys(o)){
                 if (isUnsafeKey(key)){
                     console.warn(`[Som.mergeDeep] skipping unsafe key: ${key}`);
                     continue;
                 }
-                if(typeof o[key] !== "object"){ /** Element provided is simple */
+                if(o[key] === null || typeof o[key] !== "object"){ /** Element provided is simple */
                     mNO[key] = o[key]
                 }
                 else if(typeof o[key] === "object"){ /** Element is complex */
-                    if(typeof mNO[key] !== "object"){ /** Original was not an object */
+                    if(mNO[key] === null || typeof mNO[key] !== "object"){ /** Original was not an object */
                         mNO[key] = o[key]
                     }
                     else if(Array.isArray(o[key]) === false && Array.isArray(mNO[key]) === false){
@@ -817,7 +866,7 @@ class Som{
                                 mNO[key][i] = o[key][i]
                             }
                             else{
-                                if(typeof o[key][i] !== "object"){
+                                if(o[key][i] === null || typeof o[key][i] !== "object"){
                                     if(mNO[key].indexOf(o[key][i])== -1){
                                         mNO[key].push(o[key][i])
                                     }
@@ -841,8 +890,8 @@ class Som{
             }
         }
         else if (Array.isArray(o) && Array.isArray(mNO)){
-            for (let key in o){
-                if(typeof o[key] !== "object"){ /** Element provided is simple */
+            for (let key of Object.keys(o)){
+                if(o[key] === null || typeof o[key] !== "object"){ /** Element provided is simple */
                     mNO.push(o[key])
                 }
                 else if(typeof o[key] === "object"){ /** Element is complex */
@@ -886,8 +935,8 @@ class Som{
                 return undefined; /* already visited → bail to avoid infinite loop */
             }
             seen.add(o);
-            for(let k in o){
-                if(typeof o[k] !== "object"){
+            for(let k of Object.keys(o)){
+                if(o[k] === null || typeof o[k] !== "object"){
                     if (regex){
                         if(myregexTest.test(o[k])){
                             o[k] = n_v;
@@ -919,7 +968,7 @@ class Som{
                         }
                         else{
                             o[k].forEach(function(el){
-                                if(typeof el == "object"){/* ensuring only object can enter recursion */
+                                if(el !== null && typeof el == "object"){/* ensuring only object can enter recursion */
                                     t.replace(o_v,n_v,regex,el,'internal',seen)
                                 }
                         })
@@ -984,8 +1033,8 @@ class Som{
                  * in-progress dataResult below so callers get consistent shape. */
             } else {
                 seen.add(o);
-            for(let k in o){
-                if(typeof o[k]!= 'object'){
+            for(let k of Object.keys(o)){
+                if(o[k] === null || typeof o[k]!= 'object'){
                     if(regex){
                         if(myregexTest.test(o[k])){
                             let tmp_cp = cp==""?k:cp+'.'+k;
@@ -1041,7 +1090,7 @@ class Som{
                     }
                     else{ // if array of objects
                         for(let i=0;i<o[k].length;i++){
-                            if(typeof o[k][i] == "object"){/* ensuring only object can enter recursion */
+                            if(o[k][i] !== null && typeof o[k][i] == "object"){/* ensuring only object can enter recursion */
                                 let tmp_cp = cp==""?k+'.'+i:cp+'.'+k+'.'+i;
                                 this.searchValue(value,regex,o[k][i],ps,tmp_cp,'internal',seen)
                             }
@@ -1077,6 +1126,10 @@ class Som{
      */
     subSom(path,dc,stack,context,origin){
         dc = dc?dc:false;
+        if (typeof path === 'string' && hasUnsafePathSegments(path)) {
+            console.warn(`[Som.subSom] skipping unsafe path segment: ${path.split('.').find(isUnsafeKey)}`);
+            return undefined;
+        }
         let data = this.get(path,this.defaultvalue,{origin:'internal'});
         if(data==this.defaultvalue && dc==false){
             data = {}
@@ -1121,6 +1174,9 @@ class Som{
     getSubNodes(path,dc){
         dc = dc?dc:false;
         const sub = this.subSom(path,dc,false,undefined,'internal')
+        if (!sub || !sub.data) {
+            return {};
+        }
         let results = Object.fromEntries(Object.keys(sub.data).map(key => [key, sub.subSom(key,dc,false,undefined,'internal')]))
         if(this.stack && Array.isArray(this.stack)){
             let data = {'method':'getSubNodes','path' : path}
@@ -1138,11 +1194,13 @@ class Som{
      * @param modFct function that is apply on the node. It passes the value as a parameter.
      */
     modify(path, modFct){
-        this.assign(Array.isArray(path)?path[0]:path, modFct(this.get(path,undefined,{origin:'modify'})))
+        const currentValue = this.get(path,undefined,{origin:'internal'});
+        const newValue = modFct(currentValue);
+        this.assign(Array.isArray(path)?path[0]:path, newValue, undefined, {origin:'internal'})
         if(this.stack && Array.isArray(this.stack)){
             let data = {'method':'modify','path' : path}
             if(this.options.context != undefined){ /* if something has been provided in the context options */
-                data['context'] = typeof this.options.context == "function"?this.options.context({'method':'modify','value':modFct(this.get(path,undefined,{origin:'modify'}))}):this.options.context;
+                data['context'] = typeof this.options.context == "function"?this.options.context({'method':'modify','value':newValue}):this.options.context;
             }
             this.stack.push(data)
         }

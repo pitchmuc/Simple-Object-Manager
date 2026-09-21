@@ -3,6 +3,15 @@
 This page will provide all the release note when a version or subversion of the library has been pushed.
 This is keeping tracked of the release since version 0.1.0.
 
+## v 1.1.0
+* Constructor now uses safe own-property copying instead of unsafe  Object.assign({}, object)  for copied inputs, preventing  __proto__  payloads from changing  data ’s prototype.
+* get()  now preserves valid falsy values from multi-path lookups:  0 ,  false ,  "" , and  null .
+* merge()  no longer throws when merging into a missing path while a default value is configured.
+* replace()  now handles  null  values correctly and does not stop sibling traversal early.
+* mergeDeep()  now treats  null  as a terminal value.
+* Recursive traversal in  replace() ,  searchValue() , and  mergeDeep()  now uses own enumerable keys only, avoiding inherited enumerable prototype properties.
+* modify()  now calls the modifier callback once and records one correct stack entry with the assigned value.
+
 ## v 1.0.5
 * Protecting Som from prototype injection for assign, merge and mergeDeep methods.
 * Preventing recursive loop on circular reference of older objects self referencing themselves.
