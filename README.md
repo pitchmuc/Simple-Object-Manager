@@ -19,8 +19,9 @@ Some of the benefits of using the Simple Object Manager (`Som`) include:
 - **Automatic structure creation**: The Simple Object Manager (`Som`) allows you to assign values to nested properties easily, creating the structure if it does not exist.
 - **Multiple instances**: You can create multiple instances of the Simple Object Manager (`Som`), allowing you to manage different data objects independently.
 - **Global or local scope**: The Simple Object Manager (`Som`) can be available on a global scale (window) or can be instantiated locally, giving you flexibility in how you use it.
-- **Lightweight**: The Simple Object Manager (`Som`) is a lightweight library (15Kb) that does not add significant overhead to your application.
-- **Capabilities to log operations**: The Simple Object Manager (`Som`) can log operations to the console for debugging purposes.
+- **Lightweight**: The Simple Object Manager (`Som`) is a lightweight library. The minified 1.1.0 JavaScript build is about 16.4 KB.
+- **Capabilities to track operations**: The Simple Object Manager (`Som`) can record operations in a stack for debugging or observability purposes.
+- **Safer object handling**: The Simple Object Manager (`Som`) rejects dangerous path segments and strips dangerous object keys such as `__proto__`, `constructor`, and `prototype` to reduce prototype-pollution risk.
 
 ## Methods
 

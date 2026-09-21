@@ -33,7 +33,7 @@ You can also pass directly a JSON / JS reference in the schema directly during i
 It can takes 3 arguments:
 * orignalObject: The original object you want to feed your Som object with
 * defaultValue: the default value to return when the getter do not find any value. `undefined` is the default value.
-* deepcopy: Default is set to true, so we have a deep copy of the element and do not modify the data source.
+* deepcopy: Default is set to true. In the current implementation, this creates a safe **shallow** copy of the own top-level properties and does not modify the top-level source object. Nested objects are still shared until a true deep-copy implementation is added.
 
 Such as:
 
@@ -43,7 +43,7 @@ som2 = new Som({'foo':'bar'})
 som3 = new Som(som1) /* Using the som1 as template - som1 could contains some attributes*/
 som4 = new Som([som1,som2]) /* merging different object together - following the order of the arguments */
 let myObj= {'foo':'bar'}
-som4 = new Som(myObj,options={'dv':undefined,'deepcopy':false}) /* copying the object but not deepcopying it as last argument is set to false */
+som4 = new Som(myObj,options={'dv':undefined,'deepcopy':false}) /* reusing the object reference instead of copying it */
 som5 = new Som(myObj,options={'stack':true,'context':()=>{'myContext'}}) /* copying the object and instantiating a stack*/
 
 ```
@@ -60,9 +60,23 @@ som2.data
 
 ```
 
+### Safety behavior
+
+Som rejects dangerous path segments and strips dangerous object keys to reduce prototype-pollution risk. The protected keys are:
+
+* `__proto__`
+* `constructor`
+* `prototype`
+
+When these keys are used in write/traversal paths such as `assign`, `merge`, `mergeDeep`, `push`, `remove`, `get`, or `subSom`, the unsafe operation is skipped. When an object payload contains one of these keys, the unsafe key is dropped and the rest of the object is kept. Som emits a `console.warn` when it skips unsafe keys or paths.
+
+Som also copies only own enumerable properties during constructor copy and during recursive operations such as `replace`, `searchValue`, and `mergeDeep`; inherited enumerable properties are ignored.
+
 ## Methods
 
 Here are reference of the different possible methods that can be considered usefull for the management of an XDM reference.
+
+Unless explicitly stated otherwise, Som methods mutate the internal `data` object. Some methods return `this.data` for convenience, but consumers should primarily rely on the mutation and use `.get()` to read the resulting state.
 
 ### Assigning value(s)
 
@@ -248,12 +262,12 @@ The original `important value` has been overriden by the assignment.
 
 #### Merge
 You can merge an existing object with the data contain in your `som` object.\
-The method uses the the `Object.assign` method from JavaScript.
+The method uses a safe own-property copy to merge object values.
 In order to do that, you can call the `merge` function that will apply the merge at the level pass through the additional `path` parameter.\
 Method description:
 
 * merge
-  Merge an object to your existing Som object. It uses JSON.stringify method to deep copy it.
+  Merge an object to your existing Som object.
   Arguments:
   * path : OPTIONAL : path using the dot notation to specify where to place the value.
   * object : REQUIRED : The object to merge
@@ -340,6 +354,8 @@ However, you may, sometimes, have complex object that change different layer of 
 In that case, the `mergeDeep` method will allow you to realize granular change on all nested elements of your object.\
 
 NOTE: In case of array, the `mergeDeep` method will push the new element in the array. Extending its number of elements.
+NOTE: `null` is treated as a terminal value. If the merged object contains `null`, it replaces the target value instead of being recursively merged.
+NOTE: inherited enumerable properties are ignored; only own enumerable properties are merged.
 
 * mergeDeep:
   Deep merge the object provided with the existing Som object
@@ -407,7 +423,7 @@ mySom.data // will show
 
 ### Accessing data
 
-Data can be access directly by the call of the `som` instance or by the `get` method.\
+Data can be accessed with the `get` method.\
 Method description:
 
 * get
@@ -415,23 +431,14 @@ Method description:
   Arguments:
   * path : OPTIONAL : path with dot notation such as `tenant.array.0.firstname` or an array of paths such as `['tenant.array.0.firstname','tenant.array.0.firstName']`
   * fallback : OPTIONAL : a value to return in case the selected path returns `undefined`
+  * params : OPTIONAL : object that can contain `arraycheck:true` to check if an array contains the requested value.
+
+When an array of paths is provided, Som returns the first path that resolves to a value. Valid falsy values such as `0`, `false`, `""`, and `null` are preserved and returned instead of being skipped.
 
 #### Examples
 
 Such as:
 ```JS
-    som()
-    /*
-    This will returned
-    {
-        "_tenant":[
-            {
-            "firstname" : "julien"
-            }
-        ]
-    } 
-    */
-   //*********       OR           *****************// 
    som.get()
     /*
     This will returned
@@ -493,6 +500,15 @@ Example:
     */
 ```
 
+You can also use negative indexes on arrays. `-1` returns the last element, `-2` returns the previous one, and so on.
+
+```JS
+    som.get('family_member.-1.firstname')
+    /*
+    This will return the firstname of the last family member.
+    */
+```
+
 #### Accessing elements on Array and Set
 
 For Set, when you request the Set, you can also define the value contained in the Set, and if this value is present it will return `true`, otherwise returns `false`.
@@ -515,6 +531,16 @@ Example:
     This will return 'false' because there is not the key3 in the set
     */
 
+```
+
+Numeric Set values are also supported:
+
+```JS
+    som.assign('mySet', new Set([2]))
+    som.get('mySet.2')
+    /*
+    This will return true.
+    */
 ```
 
 The same type of check can be done on array by using the `{arraycheck:true}` in the params
@@ -597,12 +623,15 @@ The Som object can push some elements to a specific path. The `push` method can 
 
 The `replace` method will allow you to replace one value in your object by another one.\
 It doesn't return anything but change the Som object itself.
-It takes 2 arguments, the old and the new value.
+It takes 2 required arguments, the old and the new value. A third optional boolean enables regular-expression matching.
 * replace
   replace the value provided by a new value provided in your object
   Arguments:
   * old_value : REQUIRED : the value you want to replace
   * new_value : REQUIRED : the new value you want to set
+  * regex : OPTIONAL : set to `true` if `old_value` should be interpreted as a regular expression. Default is `false`.
+
+`replace` traverses only own enumerable properties. It handles circular references and `null` values safely.
 
 Example
 
@@ -873,7 +902,7 @@ It takes 2 parameters:
  * path : REQUIRED : The path where you want the object for the new SOM to be used.
  Note that it will not create a sub SOM if the path does not return an object but string or integer. 
  If the path does not return anything, it will create an object at that location. 
-* dc : OPTIONAL : deepcopy, boolean where you can pass true, if you want the subSom to not be sync with your original Som instance. Default: False.
+* dc : OPTIONAL : copy mode, boolean where you can pass true if you want the subSom to use a copied node instead of the original node reference. In the current implementation this is a safe shallow copy. Default: False.
 
 Example:
 
@@ -898,13 +927,16 @@ mySubSom2.assign('key.nested','value') // will now return {"key": {"nested": "va
 If you are passing a path that is not existing, the `Som` instance will create that node and return that node as empty object.
 If you are passing an array of path, and none of the path is found, the first element of the array is used to create the node.
 
-If you are using the deepcopy option, setting it to `true`, and the node does not exist, the node is not created on your original Som instance.
+If you are using the copy option, setting it to `true`, and the node does not exist, the node is not created on your original Som instance.
+
+`subSom` rejects unsafe path segments such as `__proto__`, `constructor`, and `prototype`. If an unsafe path is provided, no sub Som is created.
 
 ### Modify
 
 Som provides a `modify` method that takes a path or list of paths and a function as paremeter. \
 It then applies that function to the value returned by that path.\
 Note that you could end up using the default value if your path does not return anything.
+The callback is called once per `modify` call, and the returned value is assigned to the path. When stack tracking is enabled, the stack context receives the modified value.
 
 It takes 2 parameters:
  * path : REQUIRED : The path where to apply that function
@@ -933,7 +965,9 @@ The `getSubNodes` method permits to deconstruct an object so you can use `subSom
 In that sense, it can make working with some complex object easier.\
 It takes 2 parameter:
 * the path where to look for objects
-* a boolean to indicate if you want a deepcopy of the node (default false)
+* a boolean to indicate if you want a copied node instead of the original node reference (default false, current copy behavior is shallow)
+
+If the provided path does not resolve to an object, `getSubNodes` returns an empty object.
 
 Example:
 
@@ -1002,7 +1036,7 @@ Therefore, please find a table below that explains the type of value returned in
 | subSom | supported | supported | `{'method':'subSom','value':SubSom}` | SubSom Object is being returned |  
 | modify | supported | supported | `{'method':'modify','value':resultOfModify}` | The value that has been calculated by the modify function is returned |  
 | searchValue | supported | supported | `{'method':'searchValue','value':results}` | results of the search, that is an object that provides the results in an array such as: `{searchElement:[path1,path2]}` |  
-| clear | supported | supported | `{'method':'searchValue','value':undefined}` |  |  
+| clear | supported | supported | `{'method':'clear','value':undefined}` |  |  
 
 
 
