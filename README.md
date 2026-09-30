@@ -9,6 +9,21 @@ Working with objects can be cumbersome and bring challenges on your data collect
 
 This [page](Simple_Object_Manager_Origin.md) will provide you the origin and philosophy behind the Simple Object Manager(`Som`).\
 
+## Installation
+
+```bash
+npm install simple-object-manager
+```
+
+```js
+const Som = require('simple-object-manager');
+
+const data = new Som({ user: { name: 'Ada' } });
+data.assign('user.active', true);
+
+console.log(data.get('user'));
+```
+
 ## Simple Object Manager Benefits
 
 The Simple Object Manager (`Som`) provides you with a set of methods to manipulate complex data objects easily.\
