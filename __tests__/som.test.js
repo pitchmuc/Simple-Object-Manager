@@ -63,6 +63,16 @@ describe('Testing the GET capabilities', ()=>{
         expect(new Som({a: '', b: 'fallback'}).get(['a','b'])).toBe('');
         expect(new Som({a: null, b: 'fallback'}).get(['a','b'])).toBeNull();
     })
+    test('Test Fallback setup',async()=>{
+        expect(new Som({a: 0, b: 2}).get('c')).toBe(undefined);
+        expect(new Som({a: 0, b: 2}).get('c',undefined)).toBe(undefined);
+        expect(new Som({a: 0, b: 2}).get('c',"")).toBe("");
+        expect(new Som({a: 0, b: 2}).get('c',"undefined")).toBe("undefined");
+        expect(new Som({a: 0, b: 2}).get('c', [])).toEqual([]);
+        expect(new Som({a: 0, b: 2}).get('c', {})).toEqual({});
+        expect(new Som({a: 0, b: 2}).get('c',false)).toBe(false);
+        expect(new Som({a: 0, b: 2}).get('c',0)).toBe(0);
+    })
 })
 
 describe('Override field with structure',()=>{

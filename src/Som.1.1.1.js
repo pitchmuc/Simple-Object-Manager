@@ -107,7 +107,7 @@ class Som{
     */
     constructor(object,options={dv:undefined,deepcopy:true,stack:false,context:undefined}) {
         this.data = {};
-        this.version = "1.1.0";
+        this.version = "1.1.1";
         this.deepcopy = options.deepcopy==undefined?true:options.deepcopy;
         this.defaultvalue = typeof arguments[1]=='string'?arguments[1]:options.dv; /* legacy backward compatibility with df parameter*/
         if(options.stack){
@@ -242,8 +242,8 @@ class Som{
                         v = v[tmp_pathSplit[i]];
                     }
                 }
-                if (typeof v !== 'undefined' || (typeof v === 'undefined' && fallback == "")){
-                    result = typeof v === 'undefined' && fallback == "" ? "" : v;
+                if (typeof v !== 'undefined' || (typeof v === 'undefined' && fallback === "")){
+                    result = typeof v === 'undefined' && fallback === "" ? "" : v;
                     found = true;
                     break;
                 }

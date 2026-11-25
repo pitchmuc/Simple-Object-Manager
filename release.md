@@ -3,6 +3,10 @@
 This page will provide all the release note when a version or subversion of the library has been pushed.
 This is keeping tracked of the release since version 0.1.0.
 
+## v 1.1.1
+
+* fix edge case when empty array (`[]`) fallback returned `""` instead of `[]`
+
 ## v 1.1.0
 * Constructor now uses safe own-property copying instead of unsafe  Object.assign({}, object)  for copied inputs, preventing  __proto__  payloads from changing  data ’s prototype.
 * get()  now preserves valid falsy values from multi-path lookups:  0 ,  false ,  "" , and  null .
